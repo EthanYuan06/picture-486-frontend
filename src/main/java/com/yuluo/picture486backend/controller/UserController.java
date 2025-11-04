@@ -1,5 +1,6 @@
 package com.yuluo.picture486backend.controller;
 
+import com.yuluo.picture486backend.annotation.AuthCheck;
 import com.yuluo.picture486backend.common.BaseResponse;
 import com.yuluo.picture486backend.common.ResultUtils;
 import com.yuluo.picture486backend.exception.ErrorCode;

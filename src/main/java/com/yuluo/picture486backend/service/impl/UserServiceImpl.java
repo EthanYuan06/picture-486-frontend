@@ -133,6 +133,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return this.getLoginUserVo(user);
     }
 
+    /**
+     * 退出登录
+     *
+     * @param request 请求
+     * @return 退出成功
+     */
     @Override
     public boolean userLogout(HttpServletRequest request) {
         //1.判断是否登录
