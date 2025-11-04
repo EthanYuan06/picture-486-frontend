@@ -47,4 +47,32 @@ public class UserController {
         User loginUser = userService.getLoginUser(request);
         return ResultUtils.success(userService.getLoginUserVo(loginUser));
     }
+
+    @PostMapping("/logout")
+    @Operation(summary = "退出登录")
+    public BaseResponse<Boolean> userLogin(HttpServletRequest request) {
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
+        boolean result = userService.userLogout(request);
+        return ResultUtils.success(result);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

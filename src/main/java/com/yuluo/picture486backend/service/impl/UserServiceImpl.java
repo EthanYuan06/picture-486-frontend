@@ -134,6 +134,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return this.getLoginUserVo(user);
     }
 
+    @Override
+    public boolean userLogout(HttpServletRequest request) {
+        //1.判断是否登录
+        Object user = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
+        }
+        //2.移除登录态
+        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
+        return true;
+    }
+
     /**
      * 获取当前登录用户
      *
@@ -173,6 +185,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
 
+    /**
+     * 获取加密密码
+     *
+     * @param userPassword 密码
+     * @return 加密后的密码
+     */
     @Override
     public String getEncryptedPassword(String userPassword){
         String SALT = "I love AwaSubaru";
