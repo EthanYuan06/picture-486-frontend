@@ -78,7 +78,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         queryWrapper.eq("userAccount", userAccount);
         long count = this.count(queryWrapper);
         if (count > 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号重复");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "该账号已被注册");
         }
 
         //2.加密
@@ -112,10 +112,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名或密码为空");
         }
         if (userAccount.length() < 4 || userAccount.length() > 20) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号长度错误");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名或密码错误");
         }
         if (userPassword.length() < 8) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度错误");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名或密码错误");
         }
         //2.加密
         String encryptedPassword = getEncryptedPassword(userPassword);
