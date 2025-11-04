@@ -43,11 +43,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isAnyBlank(userAccount, userEmail, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
         }
-        if (userAccount.length() < 4) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户账号过短");
+        if (userAccount.length() < 4 || userAccount.length() > 20) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名长度应为4-20个字符");
         }
         if (userPassword.length() < 8 || checkPassword.length() < 8) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户密码过短");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度不能少于8个字符");
         }
         if (!userPassword.equals(checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
@@ -58,7 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Pattern emailRegex = Pattern.compile(emailPattern);
         Matcher emailMatcher = emailRegex.matcher(userEmail);
         if (!emailMatcher.matches()) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "邮箱格式不正确");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请输入有效的邮箱地址");
         }
 
         // 账户不能包含特殊字符
