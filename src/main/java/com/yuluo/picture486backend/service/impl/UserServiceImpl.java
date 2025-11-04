@@ -1,14 +1,19 @@
 package com.yuluo.picture486backend.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.model.dto.UserRegisterRequest;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.enums.UserRoleEnum;
+import com.yuluo.picture486backend.model.vo.LoginUserVo;
 import com.yuluo.picture486backend.service.UserService;
 import com.yuluo.picture486backend.mapper.UserMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -23,6 +28,7 @@ import java.util.regex.Pattern;
 * @ createDate 2025-11-04 09:58:57
 */
 @Service
+@Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
 
@@ -91,6 +97,81 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         return user.getId();
     }
+
+    /**
+     * 用户登录
+     *
+     * @param userAccount  用户账户
+     * @param userPassword 用户密码
+     * @param request      请求
+     * @return 登录成功用户信息
+     */
+    @Override
+    public LoginUserVo userLogin(String userAccount, String userPassword, HttpServletRequest request) {
+        //1.校验账号密码
+        if (StringUtils.isAnyBlank(userAccount, userPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名或密码为空");
+        }
+        if (userAccount.length() < 4 || userAccount.length() > 20) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号长度错误");
+        }
+        if (userPassword.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度错误");
+        }
+        //2.加密
+        String encryptedPassword = getEncryptedPassword(userPassword);
+        //3.查询用户是否存在（防止缓存与数据库不一致）
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("userAccount", userAccount);
+        queryWrapper.eq("userPassword", encryptedPassword);
+        User user = this.baseMapper.selectOne(queryWrapper);
+        if (user == null) {
+            log.info("user login failed, userAccount cannot match userPassword.");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
+        }
+        //4.记录用户登录态
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        return this.getLoginUserVo(user);
+    }
+
+    /**
+     * 获取当前登录用户
+     *
+     * @param request 请求
+     * @return 当前登录用户
+     */
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        //1.判断是否已登录
+        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User currentUser = (User) userObj;
+        if (currentUser == null || currentUser.getId() == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        //2.数据库查询用户是否存在
+        long userId = currentUser.getId();
+        currentUser = this.getById(userId);
+        if (currentUser == null) {
+            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+        }
+        return currentUser;
+    }
+
+    /**
+     * 获取脱敏登录用户信息
+     *
+     * @param user 用户信息
+     * @return 脱敏登录用户信息
+     */
+    public LoginUserVo getLoginUserVo(User user) {
+        if (user == null){
+            return null;
+        }
+        LoginUserVo loginUserVo = new LoginUserVo();
+        BeanUtil.copyProperties(user, loginUserVo);
+        return loginUserVo;
+    }
+
 
     @Override
     public String getEncryptedPassword(String userPassword){
