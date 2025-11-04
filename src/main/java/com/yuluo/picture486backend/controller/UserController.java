@@ -1,17 +1,15 @@
 package com.yuluo.picture486backend.controller;
 
-import com.yuluo.picture486backend.annotation.AuthCheck;
 import com.yuluo.picture486backend.common.BaseResponse;
 import com.yuluo.picture486backend.common.ResultUtils;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.model.dto.UserLoginRequest;
-import com.yuluo.picture486backend.model.dto.UserRegisterRequest;
+import com.yuluo.picture486backend.model.dto.user.UserLoginRequest;
+import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.LoginUserVo;
 import com.yuluo.picture486backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;

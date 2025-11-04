@@ -1,6 +1,6 @@
 package com.yuluo.picture486backend.service;
 
-import com.yuluo.picture486backend.model.dto.UserRegisterRequest;
+import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
 import com.yuluo.picture486backend.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yuluo.picture486backend.model.vo.LoginUserVo;

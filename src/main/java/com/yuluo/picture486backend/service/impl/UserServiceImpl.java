@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.model.dto.UserRegisterRequest;
+import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.enums.UserRoleEnum;
 import com.yuluo.picture486backend.model.vo.LoginUserVo;
@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

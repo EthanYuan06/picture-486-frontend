@@ -1,4 +1,4 @@
-package com.yuluo.picture486backend.model.dto;
+package com.yuluo.picture486backend.model.dto.user;
 
 import lombok.Data;
 
