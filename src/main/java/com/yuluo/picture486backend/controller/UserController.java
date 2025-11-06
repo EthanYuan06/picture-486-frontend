@@ -1,20 +1,26 @@
 package com.yuluo.picture486backend.controller;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuluo.picture486backend.annotation.AuthCheck;
 import com.yuluo.picture486backend.common.BaseResponse;
+import com.yuluo.picture486backend.common.DeleteRequest;
 import com.yuluo.picture486backend.common.ResultUtils;
+import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.model.dto.user.UserLoginRequest;
-import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
+import com.yuluo.picture486backend.model.dto.user.*;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.LoginUserVo;
+import com.yuluo.picture486backend.model.vo.UserVo;
 import com.yuluo.picture486backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/user")
@@ -56,6 +62,78 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
+    @PostMapping("/add")
+    @Operation(summary = "【管理员】创建用户")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Long> addUser(@RequestBody UserAddRequest userAddRequest) {
+        ThrowUtils.throwIf(userAddRequest == null, ErrorCode.PARAMS_ERROR);
+        User user = new User();
+        BeanUtil.copyProperties(userAddRequest, user);
+        //默认密码 12345678
+        final String DEFAULT_PASSWORD = "12345678";
+        user.setUserPassword(userService.getEncryptedPassword(DEFAULT_PASSWORD));
+        boolean result = userService.save(user);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(user.getId());
+    }
+
+    @GetMapping("/get")
+    @Operation(summary = "【管理员】根据id获取当前用户（未脱敏）")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<User> getUserById(long id) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+        User user = userService.getById(id);
+        ThrowUtils.throwIf(user == null, ErrorCode.NOT_FOUND_ERROR);
+        return ResultUtils.success(user);
+    }
+
+    @GetMapping("/get/vo")
+    @Operation(summary = "【管理员】根据id获取当前用户信息（脱敏）")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<UserVo> getUserVoById(long id) {
+        BaseResponse<User> response = getUserById(id);
+        User user = response.getData();
+        return ResultUtils.success(userService.getUserVo(user));
+    }
+
+    @PostMapping("/delete")
+    @Operation(summary = "【管理员】删除用户")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> deleteUser(@RequestBody DeleteRequest deleteRequest) {
+        ThrowUtils.throwIf(deleteRequest == null || deleteRequest.getId() <= 0, ErrorCode.PARAMS_ERROR);
+        boolean b = userService.removeById(deleteRequest.getId());
+        return ResultUtils.success(b);
+    }
+
+    @PostMapping("/update")
+    @Operation(summary = "【管理员】更新用户")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+        ThrowUtils.throwIf(userUpdateRequest == null || userUpdateRequest.getId() == null, ErrorCode.PARAMS_ERROR);
+        User user = new User();
+        BeanUtil.copyProperties(userUpdateRequest, user);
+        boolean result = userService.updateById(user);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/list/page/vo")
+    @Operation(summary = "【管理员】分页获取用户封装列表")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<UserVo>> listUserVoByPage(@RequestBody UserQueryRequest userQueryRequest) {
+        ThrowUtils.throwIf(userQueryRequest == null , ErrorCode.PARAMS_ERROR);
+        long current = userQueryRequest.getCurrent();//当前页
+        long pageSize = userQueryRequest.getPageSize();//每页大小
+        //获取查询参数
+        Page<User> userPage = userService.page(new Page<>(current, pageSize), userService.getQueryWrapper(userQueryRequest));
+        //获取结果
+        Page<UserVo> userVoPage = new Page<>(current, pageSize, userPage.getTotal());
+        //获取用户列表
+        List<UserVo> userVoList = userService.getUserVoList(userPage.getRecords());
+        //设置结果
+        userVoPage.setRecords(userVoList);
+        return ResultUtils.success(userVoPage);
+    }
 
 
 

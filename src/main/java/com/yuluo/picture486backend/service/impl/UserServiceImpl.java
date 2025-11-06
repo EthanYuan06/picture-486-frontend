@@ -1,15 +1,20 @@
 package com.yuluo.picture486backend.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
+import com.yuluo.picture486backend.model.dto.user.UserQueryRequest;
 import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.enums.UserRoleEnum;
 import com.yuluo.picture486backend.model.vo.LoginUserVo;
+import com.yuluo.picture486backend.model.vo.UserVo;
 import com.yuluo.picture486backend.service.UserService;
 import com.yuluo.picture486backend.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,8 +23,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
 * @author 东山千夏
@@ -54,6 +62,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (userPassword.length() < 8 || checkPassword.length() < 8) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度不能少于8个字符");
         }
+
+        // 账户必须包含字母和数字，且不能以数字开头
+        if (!Character.isLetter(userAccount.charAt(0))) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号不能以数字开头");
+        }
+        if (!userAccount.matches(".*[a-zA-Z]+.*") || !userAccount.matches(".*\\d+.*")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号必须同时包含字母和数字");
+        }
+
+        // 密码必须包含大小写字母和数字
+        if (!userPassword.matches(".*[a-z]+.*") || !userPassword.matches(".*[A-Z]+.*") || !userPassword.matches(".*\\d+.*")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码必须包含大小写字母和数字");
+        }
+
         if (!userPassword.equals(checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
         }
@@ -201,4 +223,69 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String SALT = "I love AwaSubaru";
         return DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
     }
+
+    /**
+     * 【管理员】获取单个脱敏用户信息
+     *
+     * @param user 用户信息
+     * @return 脱敏用户信息
+     */
+    @Override
+    public UserVo getUserVo(User user) {
+        if (user == null){
+            return null;
+        }
+        UserVo userVo = new UserVo();
+        BeanUtil.copyProperties(user, userVo);
+        return userVo;
+    }
+
+    /**
+     * 【管理员】获取脱敏用户列表
+     *
+     * @param userList 用户列表
+     * @return 脱敏用户列表
+     */
+    @Override
+    public List<UserVo> getUserVoList(List<User> userList) {
+        if (CollUtil.isEmpty(userList)) {
+            return new ArrayList<>();
+        }
+        return userList.stream().map(this::getUserVo).collect(Collectors.toList());
+    }
+
+    /**
+     * 获取查询条件
+     *
+     * @param userQueryRequest 用户查询条件
+     * @return 查询条件
+     */
+    @Override
+    public QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
+        if (userQueryRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数为空");
+        }
+        //获取参数
+        Long id = userQueryRequest.getId();
+        String userAccount = userQueryRequest.getUserAccount();
+        String userEmail = userQueryRequest.getUserEmail();
+        String userName = userQueryRequest.getUserName();
+        String userProfile = userQueryRequest.getUserProfile();
+        String userRole = userQueryRequest.getUserRole();
+        String sortField = userQueryRequest.getSortField();
+        String sortOrder = userQueryRequest.getSortOrder();
+        //创建查询条件
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(ObjUtil.isNotNull(id), "id", id);
+        queryWrapper.eq(StrUtil.isNotBlank(userRole), "userRole", userRole);
+        queryWrapper.like(StrUtil.isNotBlank(userAccount), "userAccount", userAccount);
+        queryWrapper.like(StrUtil.isNotBlank(userEmail), "userEmail", userEmail);
+        queryWrapper.like(StrUtil.isNotBlank(userName), "userName", userName);
+        queryWrapper.like(StrUtil.isNotBlank(userProfile), "userProfile", userProfile);
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
+        return queryWrapper;
+    }
+
+
+
 }

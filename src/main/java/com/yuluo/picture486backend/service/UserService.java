@@ -1,10 +1,15 @@
 package com.yuluo.picture486backend.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.yuluo.picture486backend.model.dto.user.UserQueryRequest;
 import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
 import com.yuluo.picture486backend.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yuluo.picture486backend.model.vo.LoginUserVo;
+import com.yuluo.picture486backend.model.vo.UserVo;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
 
 /**
 * @author 东山千夏
@@ -61,4 +66,61 @@ public interface UserService extends IService<User> {
      * @return 加密后的密码
      */
     String getEncryptedPassword(String userPassword);
+
+    /**
+     * 【管理员】获取单个脱敏用户信息
+     *
+     * @param user 用户信息
+     * @return 脱敏用户信息
+     */
+    UserVo getUserVo(User user);
+
+    /**
+     * 【管理员】获取脱敏用户列表
+     *
+     * @param userList 用户列表
+     * @return 脱敏用户列表
+     */
+    List<UserVo> getUserVoList(List<User> userList);
+
+    /**
+     * 获取查询条件
+     *
+     * @param userQueryRequest 查询条件
+     * @return 查询条件
+     */
+    QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
