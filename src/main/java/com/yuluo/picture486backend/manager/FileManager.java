@@ -10,7 +10,7 @@ import com.yuluo.picture486backend.config.CosClientConfig;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.model.dto.picture.UploadPictureResult;
+import com.yuluo.picture486backend.model.dto.picture.PictureUploadResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -37,7 +37,7 @@ public class FileManager {
      * @param uploadPathPrefix 上传路径前缀，例如 user/avatar
      * @return 图片信息
      */
-    public UploadPictureResult uploadPicture(MultipartFile multipartFile, String uploadPathPrefix) {
+    public PictureUploadResult uploadPicture(MultipartFile multipartFile, String uploadPathPrefix) {
         //校验图片
         validPicture(multipartFile);
         //构建图片上传地址
@@ -46,7 +46,7 @@ public class FileManager {
         String uploadFileName = String.format("%s_%s.%s", DateUtil.formatDate(new Date()), uuid, FileUtil.getSuffix(originFilename));
         String uploadPath = String.format("%s/%s", uploadPathPrefix, uploadFileName);
         //上传图片操作
-        File file = null;//创建临时文件
+        File file = null;
         try {
             // 创建临时文件
             file = File.createTempFile(uploadPath, null);
@@ -56,21 +56,21 @@ public class FileManager {
             //获取图片信息
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
             //封装返回结果（设置图片信息）
-            UploadPictureResult uploadPictureResult = new UploadPictureResult();
+            PictureUploadResult pictureUploadResult = new PictureUploadResult();
             int picWidth = imageInfo.getWidth();
             int picHeight = imageInfo.getHeight();
             //计算图片比例
             double picScale = NumberUtil.round(picWidth * 1.0 / picHeight, 2).doubleValue();
             //设置属性
-            uploadPictureResult.setPicName(FileUtil.mainName(originFilename));
-            uploadPictureResult.setPicSize(FileUtil.size(file));
-            uploadPictureResult.setPicWidth(picWidth);
-            uploadPictureResult.setPicHeight(picHeight);
-            uploadPictureResult.setPicScale(picScale);
-            uploadPictureResult.setPicFormat(imageInfo.getFormat());
-            uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
+            pictureUploadResult.setPicName(FileUtil.mainName(originFilename));
+            pictureUploadResult.setPicSize(FileUtil.size(file));
+            pictureUploadResult.setPicWidth(picWidth);
+            pictureUploadResult.setPicHeight(picHeight);
+            pictureUploadResult.setPicScale(picScale);
+            pictureUploadResult.setPicFormat(imageInfo.getFormat());
+            pictureUploadResult.setUrl(cosClientConfig.getHost() + "/" + uploadPath);
             // 返回图片信息
-            return uploadPictureResult;
+            return pictureUploadResult;
         } catch (Exception e) {
             log.error("图片上传到对象存储失败" , e);
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "上传失败");
@@ -106,7 +106,7 @@ public class FileManager {
         long fileSize = multipartFile.getSize();
         //定义常量：1MB
         final long ONE_MB = 1024 * 1024;
-        ThrowUtils.throwIf(fileSize > 2 * ONE_MB, ErrorCode.PARAMS_ERROR, "上传文件大小不能超过2MB");
+        ThrowUtils.throwIf(fileSize > 8 * ONE_MB, ErrorCode.PARAMS_ERROR, "上传文件大小不能超过8MB");
         //获取文件后缀
         String fileSuffix = FileUtil.getSuffix(multipartFile.getOriginalFilename());
         //定义常量：允许的图片格式

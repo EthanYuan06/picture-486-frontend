@@ -1,7 +1,6 @@
 package com.yuluo.picture486backend.service;
 
-import com.yuluo.picture486backend.model.dto.picture.UploadPictureRequest;
-import com.yuluo.picture486backend.model.dto.picture.UploadPictureResult;
+import com.yuluo.picture486backend.model.dto.picture.PictureUploadRequest;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yuluo.picture486backend.model.entity.User;
@@ -18,9 +17,9 @@ public interface PictureService extends IService<Picture> {
      * 上传图片
      *
      * @param multipartFile 文件
-     * @param uploadPictureRequest 图片上传请求
+     * @param pictureUploadRequest 图片上传请求
      * @param loginUser 登录用户（判断权限用）
      * @return 图片信息
      */
-    PictureVo uploadPicture(MultipartFile multipartFile, UploadPictureRequest uploadPictureRequest, User loginUser);
+    PictureVo uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser);
 }

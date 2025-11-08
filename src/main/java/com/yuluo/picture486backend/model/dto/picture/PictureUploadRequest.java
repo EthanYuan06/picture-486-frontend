@@ -5,7 +5,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class UploadPictureRequest implements Serializable {
+public class PictureUploadRequest implements Serializable {
   
     /**  
      * 图片 id（用于修改）  

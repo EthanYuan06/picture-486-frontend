@@ -4,10 +4,7 @@ import com.yuluo.picture486backend.annotation.AuthCheck;
 import com.yuluo.picture486backend.common.BaseResponse;
 import com.yuluo.picture486backend.common.ResultUtils;
 import com.yuluo.picture486backend.constant.UserConstant;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.model.dto.picture.UploadPictureRequest;
-import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
+import com.yuluo.picture486backend.model.dto.picture.PictureUploadRequest;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.PictureVo;
 import com.yuluo.picture486backend.service.PictureService;
@@ -35,10 +32,10 @@ public class PictureController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<PictureVo> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
-            UploadPictureRequest uploadPictureRequest,
+            PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
-        PictureVo pictureVo = pictureService.uploadPicture(multipartFile, uploadPictureRequest, loginUser);
+        PictureVo pictureVo = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
         return ResultUtils.success(pictureVo);
     }
 }

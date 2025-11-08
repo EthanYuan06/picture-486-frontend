@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
 import com.yuluo.picture486backend.manager.FileManager;
-import com.yuluo.picture486backend.model.dto.picture.UploadPictureRequest;
-import com.yuluo.picture486backend.model.dto.picture.UploadPictureResult;
+import com.yuluo.picture486backend.model.dto.picture.PictureUploadRequest;
+import com.yuluo.picture486backend.model.dto.picture.PictureUploadResult;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.PictureVo;
@@ -28,13 +28,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Resource
     private FileManager fileManager;
     @Override
-    public PictureVo uploadPicture(MultipartFile multipartFile, UploadPictureRequest uploadPictureRequest, User loginUser) {
+    public PictureVo uploadPicture(MultipartFile multipartFile, PictureUploadRequest pictureUploadRequest, User loginUser) {
         //校验参数
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         //判断新增还是删除
         Long pictureId = null;
-        if (uploadPictureRequest != null) {
-            pictureId = uploadPictureRequest.getId();
+        if (pictureUploadRequest != null) {
+            pictureId = pictureUploadRequest.getId();
         }
         //若更新，则判断图片是否存在
         if (pictureId != null){
@@ -42,11 +42,11 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             ThrowUtils.throwIf(!exists, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
         }
         //上传图片
-        //按照用户id划分目录
+        //按照用户id划分目录（构建上传路径前缀，指定存储桶中的存储路径）
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
-        UploadPictureResult uploadPictureResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
+        PictureUploadResult pictureUploadResult = fileManager.uploadPicture(multipartFile, uploadPathPrefix);
         //构造要入库的图片信息
-        Picture picture = getPictureInfo(loginUser, uploadPictureResult, pictureId);
+        Picture picture = getPictureInfo(loginUser, pictureUploadResult, pictureId);
         //保存图片信息到数据库
         boolean result = this.saveOrUpdate(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
@@ -56,20 +56,20 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     /**
      * 获取图片信息
      * @param loginUser 登录用户
-     * @param uploadPictureResult 上传图片结果
+     * @param pictureUploadResult 上传图片结果
      * @param pictureId 图片id
      * @return 图片信息
      */
 
-    private static Picture getPictureInfo(User loginUser, UploadPictureResult uploadPictureResult, Long pictureId) {
+    private static Picture getPictureInfo(User loginUser, PictureUploadResult pictureUploadResult, Long pictureId) {
         Picture picture = new Picture();
-        picture.setUrl(uploadPictureResult.getUrl());
-        picture.setName(uploadPictureResult.getPicName());
-        picture.setPicSize(uploadPictureResult.getPicSize());
-        picture.setPicWidth(uploadPictureResult.getPicWidth());
-        picture.setPicHeight(uploadPictureResult.getPicHeight());
-        picture.setPicScale(uploadPictureResult.getPicScale());
-        picture.setPicFormat(uploadPictureResult.getPicFormat());
+        picture.setUrl(pictureUploadResult.getUrl());
+        picture.setName(pictureUploadResult.getPicName());
+        picture.setPicSize(pictureUploadResult.getPicSize());
+        picture.setPicWidth(pictureUploadResult.getPicWidth());
+        picture.setPicHeight(pictureUploadResult.getPicHeight());
+        picture.setPicScale(pictureUploadResult.getPicScale());
+        picture.setPicFormat(pictureUploadResult.getPicFormat());
         picture.setUserId(loginUser.getId());
         //如果pictureId不为空，表示更新，否则是新增
         if (pictureId != null) {

@@ -3,7 +3,7 @@ package com.yuluo.picture486backend.model.dto.picture;
 import lombok.Data;
 
 @Data
-public class UploadPictureResult {
+public class PictureUploadResult {
 
     /**
      * 图片地址
