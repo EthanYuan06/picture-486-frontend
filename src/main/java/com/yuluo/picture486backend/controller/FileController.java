@@ -47,7 +47,7 @@ public class FileController {
             // 上传文件
             file = File.createTempFile(filepath, null);
             multipartFile.transferTo(file);
-            cosManager.putObject(filepath, file);
+            cosManager.putPictureObject(filepath, file);
             // 返回可访问地址
             return ResultUtils.success(filepath);
         } catch (Exception e) {
@@ -75,7 +75,7 @@ public class FileController {
     public void testDownloadFile(String filepath, HttpServletResponse response) throws IOException {
         COSObjectInputStream cosObjectInput = null;
         try {
-            COSObject cosObject = cosManager.getObject(filepath);
+            COSObject cosObject = cosManager.getPictureObject(filepath);
             cosObjectInput = cosObject.getObjectContent();
             // 处理下载到的流
             byte[] bytes = IOUtils.toByteArray(cosObjectInput);
