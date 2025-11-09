@@ -106,11 +106,11 @@ public class FileManager {
         long fileSize = multipartFile.getSize();
         //定义常量：1MB
         final long ONE_MB = 1024 * 1024;
-        ThrowUtils.throwIf(fileSize > 8 * ONE_MB, ErrorCode.PARAMS_ERROR, "上传文件大小不能超过8MB");
+        ThrowUtils.throwIf(fileSize > 15 * ONE_MB, ErrorCode.PARAMS_ERROR, "上传文件大小不能超过15MB");
         //获取文件后缀
         String fileSuffix = FileUtil.getSuffix(multipartFile.getOriginalFilename());
         //定义常量：允许的图片格式
         final List<String> ALLOW_FORMAT_SUFFIX = Arrays.asList("jpg", "jpeg", "png", "webp");
-        ThrowUtils.throwIf(!ALLOW_FORMAT_SUFFIX.contains(fileSuffix), ErrorCode.PARAMS_ERROR, "不支持的文件类型");
+        ThrowUtils.throwIf(!ALLOW_FORMAT_SUFFIX.contains(fileSuffix.toLowerCase()), ErrorCode.PARAMS_ERROR, "不支持的文件类型");
     }
 }
