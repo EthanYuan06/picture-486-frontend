@@ -5,6 +5,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 15MB
+      max-request-size: 15MB
   # 数据库配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
