@@ -1,12 +1,14 @@
 package com.yuluo.picture486backend.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuluo.picture486backend.annotation.AuthCheck;
 import com.yuluo.picture486backend.common.BaseResponse;
 import com.yuluo.picture486backend.common.DeleteRequest;
 import com.yuluo.picture486backend.common.ResultUtils;
 import com.yuluo.picture486backend.constant.UserConstant;
+import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
 import com.yuluo.picture486backend.model.dto.user.*;
@@ -59,6 +61,26 @@ public class UserController {
     public BaseResponse<Boolean> userLogin(HttpServletRequest request) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         boolean result = userService.userLogout(request);
+        return ResultUtils.success(result);
+    }
+
+    @PostMapping("/reset")
+    @Operation(summary = "重置密码")
+    public BaseResponse<Boolean> userReset(@RequestBody UserResetRequest userResetRequest) {
+        ThrowUtils.throwIf(userResetRequest == null, ErrorCode.PARAMS_ERROR);
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        //根据账户检查数据库是否有该用户
+        queryWrapper.eq("userAccount", userResetRequest.getUserAccount());
+        User resetUser = userService.getOne(queryWrapper);
+        //校验输入的账户密码是否有效
+        String userAccount = userResetRequest.getUserAccount();
+        String passWord = userResetRequest.getUserPassword();
+        String checkPassword = userResetRequest.getCheckPassword();
+        userService.validKey(userAccount, passWord, checkPassword);
+        //设置重置用户的加密密码
+        String encryptedPassword = userService.getEncryptedPassword(userResetRequest.getUserPassword());
+        resetUser.setUserPassword(encryptedPassword);
+        boolean result = userService.updateById(resetUser);
         return ResultUtils.success(result);
     }
 

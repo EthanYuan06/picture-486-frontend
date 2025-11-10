@@ -56,29 +56,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isAnyBlank(userAccount, userEmail, userPassword, checkPassword)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "参数为空");
         }
-        if (userAccount.length() < 4 || userAccount.length() > 20) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名长度应为4-20个字符");
-        }
-        if (userPassword.length() < 8 || checkPassword.length() < 8) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度不能少于8个字符");
-        }
-
-        // 账户必须包含字母和数字，且不能以数字开头
-        if (!Character.isLetter(userAccount.charAt(0))) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号不能以数字开头");
-        }
-        if (!userAccount.matches(".*[a-zA-Z]+.*") || !userAccount.matches(".*\\d+.*")) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号必须同时包含字母和数字");
-        }
-
-        // 密码必须包含大小写字母和数字
-        if (!userPassword.matches(".*[a-z]+.*") || !userPassword.matches(".*[A-Z]+.*") || !userPassword.matches(".*\\d+.*")) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码必须包含大小写字母和数字");
-        }
-
-        if (!userPassword.equals(checkPassword)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
-        }
+        validKey(userAccount, userPassword, checkPassword);
 
         // 校验邮箱格式
         String emailPattern = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@((?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,})$";
@@ -117,6 +95,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "注册失败");
         }
         return user.getId();
+    }
+
+    /**
+     * 校验用户输入的信息
+     * @param userAccount  用户账号
+     * @param userPassword 用户密码
+     * @param checkPassword 校验密码
+     */
+    public void validKey(String userAccount, String userPassword, String checkPassword) {
+        if (userAccount.length() < 4 || userAccount.length() > 20) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户名长度应为4-20个字符");
+        }
+        if (userPassword.length() < 8 || checkPassword.length() < 8) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码长度不能少于8个字符");
+        }
+
+        // 账户必须包含字母和数字，且不能以数字开头
+        if (!Character.isLetter(userAccount.charAt(0))) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号不能以数字开头");
+        }
+        if (!userAccount.matches(".*[a-zA-Z]+.*") || !userAccount.matches(".*\\d+.*")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "账号必须同时包含字母和数字");
+        }
+
+        // 密码必须包含大小写字母和数字
+        if (!userPassword.matches(".*[a-z]+.*") || !userPassword.matches(".*[A-Z]+.*") || !userPassword.matches(".*\\d+.*")) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码必须包含大小写字母和数字");
+        }
+
+        if (!userPassword.equals(checkPassword)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "两次输入的密码不一致");
+        }
     }
 
     /**

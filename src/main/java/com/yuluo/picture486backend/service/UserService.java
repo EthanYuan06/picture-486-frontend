@@ -44,6 +44,15 @@ public interface UserService extends IService<User> {
     boolean userLogout(HttpServletRequest request);
 
     /**
+     * 校验用户输入的信息
+     *
+     * @param userAccount  用户账号
+     * @param userPassword 用户密码
+     * @param checkPassword 校验密码
+     */
+    void validKey(String userAccount, String userPassword, String checkPassword);
+
+    /**
      * 获取当前登录用户
      *
      * @param request 请求
