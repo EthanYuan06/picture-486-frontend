@@ -111,7 +111,6 @@ public class UserController {
 
     @GetMapping("/get/vo")
     @Operation(summary = "【管理员】根据id获取当前用户信息（脱敏）")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<UserVo> getUserVoById(long id) {
         BaseResponse<User> response = getUserById(id);
         User user = response.getData();

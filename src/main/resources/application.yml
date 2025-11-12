@@ -29,6 +29,8 @@ server:
   port: 8123
   servlet:
     context-path: /api
+    session:
+      timeout: 1h
 # http://localhost:8123/api/doc.html
 springdoc:
   swagger-ui:

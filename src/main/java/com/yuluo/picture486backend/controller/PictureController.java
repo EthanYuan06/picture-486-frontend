@@ -11,12 +11,10 @@ import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.model.dto.picture.PictureEditRequest;
-import com.yuluo.picture486backend.model.dto.picture.PictureQueryRequest;
-import com.yuluo.picture486backend.model.dto.picture.PictureUpdateRequest;
-import com.yuluo.picture486backend.model.dto.picture.PictureUploadRequest;
+import com.yuluo.picture486backend.model.dto.picture.*;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486backend.model.enums.PictureReviewStatusEnum;
 import com.yuluo.picture486backend.model.vo.PictureTagCategory;
 import com.yuluo.picture486backend.model.vo.PictureVo;
 import com.yuluo.picture486backend.service.PictureService;
@@ -46,7 +44,7 @@ public class PictureController {
 
     @PostMapping("/upload")
     @Operation(summary = "上传图片")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<PictureVo> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -80,7 +78,7 @@ public class PictureController {
     @PostMapping("/update")
     @Operation(summary = "【管理员】更新图片")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest) {
+    public BaseResponse<Boolean> updatePicture(@RequestBody PictureUpdateRequest pictureUpdateRequest, HttpServletRequest request) {
         if (pictureUpdateRequest == null || pictureUpdateRequest.getId() <= 0){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -95,6 +93,9 @@ public class PictureController {
         Long id = pictureUpdateRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
+        //补充审核参数
+        User loginUser = userService.getLoginUser(request);
+        pictureService.fillReviewPictureParams(picture, loginUser);
         //操作数据库更新图片信息
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -136,12 +137,13 @@ public class PictureController {
 
     @PostMapping("/list/page/vo")
     @Operation(summary = "分页获取图片列表")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Page<PictureVo>> listPictureVoByPage(@RequestBody PictureQueryRequest pictureQueryRequest, HttpServletRequest request) {
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
         //限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
+        //普通用户只能查看已过审的数据
+        pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         //查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size), pictureService.getQueryWrapper(pictureQueryRequest));
         return ResultUtils.success(pictureService.getPictureVoPage(picturePage, request));
@@ -171,6 +173,8 @@ public class PictureController {
         if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
+        //补充审核参数
+        pictureService.fillReviewPictureParams(oldPicture, loginUser);
         //操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -188,7 +192,15 @@ public class PictureController {
         return ResultUtils.success(pictureTagCategory);
     }
 
-
+    @PostMapping("/review")
+    @Operation(summary = "【管理员】图片审核")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        return ResultUtils.success(true);
+    }
 
 
 
