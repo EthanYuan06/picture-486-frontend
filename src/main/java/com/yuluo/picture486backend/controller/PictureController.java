@@ -44,13 +44,23 @@ public class PictureController {
 
     @PostMapping("/upload")
     @Operation(summary = "上传图片")
-//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<PictureVo> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         PictureVo pictureVo = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
+        return ResultUtils.success(pictureVo);
+    }
+
+    @PostMapping("/upload/url")
+    @Operation(summary = "url上传图片")
+    public BaseResponse<PictureVo> uploadPictureByUrl(
+            @RequestBody PictureUploadRequest pictureUploadRequest,
+            HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        String fileUrl = pictureUploadRequest.getFileUrl();
+        PictureVo pictureVo = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
         return ResultUtils.success(pictureVo);
     }
 
@@ -181,6 +191,16 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    @PostMapping("/review")
+    @Operation(summary = "【管理员】图片审核")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        return ResultUtils.success(true);
+    }
+
     @GetMapping("/tag_category")
     @Operation(summary = "标签和分类")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
@@ -192,15 +212,6 @@ public class PictureController {
         return ResultUtils.success(pictureTagCategory);
     }
 
-    @PostMapping("/review")
-    @Operation(summary = "【管理员】图片审核")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest, HttpServletRequest request) {
-        ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
-        User loginUser = userService.getLoginUser(request);
-        pictureService.doPictureReview(pictureReviewRequest, loginUser);
-        return ResultUtils.success(true);
-    }
 
 
 
