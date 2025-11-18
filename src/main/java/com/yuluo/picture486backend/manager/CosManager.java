@@ -26,7 +26,7 @@ public class CosManager {
 
     /**
      * 上传对象（返回图片信息）
-     *
+     * 上传时将图片转换为webp格式，以相对质量70保存副本
      * @param key  唯一键
      * @param file 文件
      */
@@ -41,7 +41,7 @@ public class CosManager {
         // 图片压缩（转成 webp 格式）
         String webpKey = FileUtil.mainName(key) + ".webp";
         PicOperations.Rule compressRule = new PicOperations.Rule();
-        compressRule.setRule("imageMogr2/format/webp");
+        compressRule.setRule("imageMogr2/format/webp/rquality/70");
         compressRule.setBucket(cosClientConfig.getBucket());
         compressRule.setFileId(webpKey);
         rules.add(compressRule);
