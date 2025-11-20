@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.manager.CosManager;
 import com.yuluo.picture486backend.manager.FileManager;
 import com.yuluo.picture486backend.manager.upload.FilePictureUpload;
 import com.yuluo.picture486backend.manager.upload.PictureUploadTemplate;
@@ -27,7 +28,10 @@ import com.yuluo.picture486backend.mapper.PictureMapper;
 import com.yuluo.picture486backend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,6 +47,7 @@ import java.util.stream.Collectors;
 * @createDate 2025-11-07 22:39:28
 */
 @Service
+@Slf4j
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     implements PictureService{
     @Resource
@@ -53,6 +58,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private UserService userService;
+    @Autowired
+    private CosManager cosManager;
+
     @Override
     public PictureVo uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
         //校验参数
@@ -255,6 +263,53 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }else {
             //普通用户创建或编辑图片，只更改字段为“待审核”
             picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
+        }
+    }
+
+    /**
+     * 删除图片
+     * @param oldPicture 旧图片信息
+     */
+    @Async
+    @Override
+    public void clearPictureFile(Picture oldPicture) {
+        //判断图片是否被多条记录使用
+        String pictureUrl = oldPicture.getUrl();
+        Long count = this.lambdaQuery()
+                .eq(Picture::getUrl, pictureUrl)
+                .count();
+        //若被多条记录使用，不清理
+        if(count > 1){
+            log.info("图片被多条记录使用，不进行清理");
+            return;
+        }
+        try {
+            cosManager.deleteObject(oldPicture.getUrl());
+            // 删除webp格式图片
+            String webpUrl = oldPicture.getUrl();
+            if (!webpUrl.endsWith(".webp")) {
+                // 获取文件名（不含扩展名）
+                int lastDotIndex = webpUrl.lastIndexOf(".");
+                if (lastDotIndex != -1) {
+                    webpUrl = webpUrl.substring(0, lastDotIndex) + ".webp";
+                    try {
+                        cosManager.deleteObject(webpUrl);
+                    } catch (Exception e) {
+                        log.error("删除webp图片文件失败: url={}, 错误信息={}", webpUrl, e.getMessage(), e);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("删除图片文件失败: url={}, 错误信息={}", pictureUrl, e.getMessage(), e);
+        }
+        //清理缩略图
+        String thumbnailUrl = oldPicture.getThumbnailUrl();
+        if(StrUtil.isNotBlank(thumbnailUrl)){
+            try {
+                cosManager.deleteObject(thumbnailUrl);
+            } catch (Exception e) {
+                log.error("删除缩略图文件失败: url={}, 错误信息={}", thumbnailUrl, e.getMessage(), e);
+            }
         }
     }
 

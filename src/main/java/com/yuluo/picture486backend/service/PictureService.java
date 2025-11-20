@@ -5,13 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuluo.picture486backend.model.dto.picture.PictureQueryRequest;
 import com.yuluo.picture486backend.model.dto.picture.PictureReviewRequest;
 import com.yuluo.picture486backend.model.dto.picture.PictureUploadRequest;
-import com.yuluo.picture486backend.model.dto.user.UserQueryRequest;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.PictureVo;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
 * @author 东山千夏
@@ -77,4 +75,11 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser 登录用户
      */
     void fillReviewPictureParams(Picture picture, User loginUser);
+
+    /**
+     * 清理图片文件
+     *
+     * @param oldPicture 旧图片信息
+     */
+    void clearPictureFile(Picture oldPicture);
 }

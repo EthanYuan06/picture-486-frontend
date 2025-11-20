@@ -9,6 +9,7 @@ import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.PicOperations;
 import com.yuluo.picture486backend.config.CosClientConfig;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@Slf4j
 public class CosManager {  
   
     @Resource
@@ -71,4 +73,25 @@ public class CosManager {
         return cosClient.getObject(getObjectRequest);
     }
 
+    /**
+     * 删除对象
+     *
+     * @param key 唯一键
+     */
+    public void deleteObject(String key) {
+        try {
+            // 从完整URL中提取对象key
+            String objectKey = key;
+            if (key.startsWith("http")) {
+                // 提取路径部分作为对象key
+                objectKey = key.substring(key.indexOf("/", 8) + 1); // 跳过 "https://"
+            }
+            
+            cosClient.deleteObject(cosClientConfig.getBucket(), objectKey);
+            log.info("成功删除COS对象: {}", key);
+        } catch (Exception e) {
+            log.error("删除COS对象失败: key={}, 错误信息={}", key, e.getMessage(), e);
+            throw new RuntimeException("删除COS对象失败: " + key, e);
+        }
+    }
 }
