@@ -63,6 +63,7 @@ public class FileController {
             }
         }
     }
+    
     /**
      * 测试文件下载
      *
@@ -95,5 +96,57 @@ public class FileController {
         }
     }
 
-
+//    /**
+//     * 触发WebP图片转换任务
+//     *
+//     * @return 操作结果
+//     */
+//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+//    @PostMapping("/webp/process")
+//    @Operation(summary = "处理WebP图片转换", description = "扫描public目录下的所有图片并生成对应的WebP版本")
+//    public BaseResponse<Boolean> processWebpImages() {
+//        try {
+//            WebpUtils.processPublicImagesToWebp();
+//            return ResultUtils.success(true);
+//        } catch (Exception e) {
+//            log.error("WebP转换任务失败", e);
+//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "WebP转换失败");
+//        }
+//    }
+//
+//    /**
+//     * 触发缩略图生成任务
+//     *
+//     * @return 操作结果
+//     */
+//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+//    @PostMapping("/thumbnail/process")
+//    @Operation(summary = "处理缩略图生成", description = "扫描存储桶中的所有图片并生成对应的缩略图")
+//    public BaseResponse<Boolean> processThumbnailImages() {
+//        try {
+//            ThumbnailUtils.processAllImagesToThumbnail();
+//            return ResultUtils.success(true);
+//        } catch (Exception e) {
+//            log.error("缩略图转换任务失败", e);
+//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "缩略图转换失败");
+//        }
+//    }
+//
+//    /**
+//     * 扫描并存储缩略图URL
+//     *
+//     * @return 操作结果
+//     */
+//    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+//    @PostMapping("/thumbnail/scan")
+//    @Operation(summary = "扫描并存储缩略图URL", description = "扫描存储桶中已存在的缩略图并将URL存入数据库")
+//    public BaseResponse<Boolean> scanAndStoreThumbnails() {
+//        try {
+//            ThumbnailUtils.scanAndStoreAllThumbnails();
+//            return ResultUtils.success(true);
+//        } catch (Exception e) {
+//            log.error("扫描并存储缩略图任务失败", e);
+//            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "扫描并存储缩略图失败");
+//        }
+//    }
 }

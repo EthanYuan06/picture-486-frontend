@@ -32,6 +32,7 @@ create table if not exists picture
 (
     id           bigint auto_increment comment 'id' primary key,
     url          varchar(512)                       not null comment '图片 url',
+    thumbnailUrl varchar(512)                       null comment '缩略图 url',
     name         varchar(128)                       not null comment '图片名称',
     introduction varchar(512)                       null comment '简介',
     category     varchar(64)                        null comment '分类',

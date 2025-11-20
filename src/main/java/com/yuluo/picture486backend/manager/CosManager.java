@@ -26,7 +26,7 @@ public class CosManager {
 
     /**
      * 上传对象（返回图片信息）
-     * 上传时将图片转换为webp格式，以相对质量70保存副本
+     * 上传时将图片转换为webp格式，以相对质量70保存
      * @param key  唯一键
      * @param file 文件
      */
@@ -45,6 +45,16 @@ public class CosManager {
         compressRule.setBucket(cosClientConfig.getBucket());
         compressRule.setFileId(webpKey);
         rules.add(compressRule);
+        //缩略图处理，只处理大于20kB的图片
+        if (file.length() > 2 * 1024) {
+            PicOperations.Rule thumbnailRule = new PicOperations.Rule();
+            thumbnailRule.setBucket(cosClientConfig.getBucket());
+            String thumbnailKey = FileUtil.mainName(key) + "_thumbnail." + FileUtil.getSuffix(key);
+            thumbnailRule.setFileId(thumbnailKey);
+            //缩放规则（如果大于原图宽高，则不处理，此操作不会影响前端图片比例）
+            thumbnailRule.setRule(String.format("imageMogr2/thumbnail/%sx%s>", 300, 300));
+            rules.add(thumbnailRule);
+        }
         // 构造处理参数
         picOperations.setRules(rules);
         putObjectRequest.setPicOperations(picOperations);
