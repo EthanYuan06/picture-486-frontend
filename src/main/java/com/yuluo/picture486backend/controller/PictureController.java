@@ -148,9 +148,34 @@ public class PictureController {
     public BaseResponse<Page<Picture>> listPictureByPage(@RequestBody PictureQueryRequest pictureQueryRequest) {
        long current = pictureQueryRequest.getCurrent();
        long size = pictureQueryRequest.getPageSize();
+        //构建缓存key格式
+        String queryCondition = JSONUtil.toJsonStr(pictureQueryRequest);
+        String hashKey = DigestUtils.md5DigestAsHex(queryCondition.getBytes());
+        String cacheKey = "listPictureByPage:" + hashKey;
+        //查询本地缓存
+        String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
+        if (cachedValue != null){
+            //缓存命中，返回结果
+            Page<Picture> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachedPage);
+        }
+        //查询分布式缓存
+        ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
+        cachedValue = valueOps.get(cacheKey);
+        if (cachedValue != null){
+            //缓存命中，返回结果
+            LOCAL_CACHE.put(cacheKey, cachedValue);
+            Page<Picture> cachedPage = JSONUtil.toBean(cachedValue, Page.class);
+            return ResultUtils.success(cachedPage);
+        }
        //查询数据库
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
+        String cacheValue = JSONUtil.toJsonStr(picturePage);
+        //更新本地缓存
+        LOCAL_CACHE.put(cacheKey, cacheValue);
+        //更新Redis缓存，设置过期时间5分钟
+        valueOps.set(cacheKey, cacheValue,5, TimeUnit.MINUTES);
         return ResultUtils.success(picturePage);
     }
 
