@@ -1,6 +1,8 @@
 package com.yuluo.picture486backend.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateTime;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -29,6 +31,7 @@ import com.yuluo.picture486backend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -129,8 +132,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Integer reviewStatus = pictureQueryRequest.getReviewStatus();
         String reviewMessage = pictureQueryRequest.getReviewMessage();
         Long reviewerId = pictureQueryRequest.getReviewerId();
+        String createTimeStart = pictureQueryRequest.getCreateTimeStart();
+        String createTimeEnd = pictureQueryRequest.getCreateTimeEnd();
+        String editTimeStart = pictureQueryRequest.getEditTimeStart();
+        String editTimeEnd = pictureQueryRequest.getEditTimeEnd();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
+
         //从多字段中搜索，支持同时从name和introduction中检索
         if(StrUtil.isNotBlank(searchText)){
             //拼接查询条件
@@ -162,8 +170,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 queryWrapper.like("tags", "\"" + tag + "\"");//转义格式
             }
         }
+        // 创建时间范围查询
+        if (createTimeStart != null || createTimeEnd != null) {
+            DateTime startTime = DateUtil.parse(createTimeStart, "yyyy-MM-dd");
+            DateTime endTime = DateUtil.parse(createTimeEnd, "yyyy-MM-dd");
+            DateTime startOfDay = DateUtil.beginOfDay(startTime);
+            DateTime endOfDay = DateUtil.endOfDay(endTime);
+            queryWrapper.between("createTime", startOfDay, endOfDay);
+        }
+        // 编辑时间范围查询
+        if (editTimeStart != null || editTimeEnd != null) {
+            DateTime startTime = DateUtil.parse(editTimeStart, "yyyy-MM-dd");
+            DateTime endTime = DateUtil.parse(editTimeEnd, "yyyy-MM-dd");
+            DateTime startOfDay = DateUtil.beginOfDay(startTime);
+            DateTime endOfDay = DateUtil.endOfDay(endTime);
+            queryWrapper.between("editTime", startOfDay, endOfDay);
+        }
         //排序
-        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("asc"), sortField);
         return queryWrapper;
     }
 

@@ -3,8 +3,10 @@ package com.yuluo.picture486backend.model.dto.picture;
 import com.yuluo.picture486backend.common.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
@@ -86,6 +88,25 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
      */
     private Long reviewerId;
 
+    /**
+     * 创建时间开始
+     */
+    private String createTimeStart;
+
+    /**
+     * 创建时间结束
+     */
+    private String createTimeEnd;
+
+    /**
+     * 编辑时间开始
+     */
+    private String editTimeStart;
+
+    /**
+     * 编辑时间结束
+     */
+    private String editTimeEnd;
 
     private static final long serialVersionUID = 1L;  
 }
