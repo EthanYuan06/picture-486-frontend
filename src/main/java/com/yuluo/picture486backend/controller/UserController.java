@@ -11,6 +11,9 @@ import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.manager.CosManager;
+import com.yuluo.picture486backend.manager.upload.FilePictureUpload;
+import com.yuluo.picture486backend.model.dto.picture.PictureUploadResult;
 import com.yuluo.picture486backend.model.dto.user.*;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.LoginUserVo;
@@ -20,8 +23,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -30,6 +36,8 @@ import java.util.List;
 public class UserController {
     @Resource
     private UserService userService;
+    @Resource
+    private FilePictureUpload filePictureUpload;
 
     @PostMapping("/register")
     @Operation(summary = "用户注册")
@@ -110,7 +118,7 @@ public class UserController {
     }
 
     @GetMapping("/get/vo")
-    @Operation(summary = "【管理员】根据id获取当前用户信息（脱敏）")
+    @Operation(summary = "根据id获取当前用户信息（脱敏）")
     public BaseResponse<UserVo> getUserVoById(long id) {
         BaseResponse<User> response = getUserById(id);
         User user = response.getData();
@@ -156,6 +164,37 @@ public class UserController {
         return ResultUtils.success(userVoPage);
     }
 
+    @PostMapping("/avatar/upload")
+    @Operation(summary = "用户上传头像")
+    public BaseResponse<Boolean> uploadAvatar(@RequestPart("file") MultipartFile file, HttpServletRequest request, @RequestParam("id") Long id) {
+        // 获取登录用户
+        User loginUser = userService.getLoginUser(request);
+        if (loginUser.getUserRole().equals(UserConstant.DEFAULT_ROLE)) {
+            // 构建上传路径前缀，指定存储桶中的存储路径为 avatar 目录
+            String uploadPathPrefix = String.format("avatar/%s", loginUser.getId());
+            // 使用文件上传处理器
+            PictureUploadResult uploadResult = filePictureUpload.uploadPicture(file, uploadPathPrefix);
+            // 只更新用户头像URL字段
+            User updateUser = new User();
+            updateUser.setId(loginUser.getId());
+            updateUser.setUserAvatar(uploadResult.getUrl());
+            boolean result = userService.updateById(updateUser);
+            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "头像上传失败");
+        }
+        if (loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE)) {
+            // 构建上传路径前缀，指定存储桶中的存储路径为 avatar 目录
+            String uploadPathPrefix = String.format("avatar/%s", id);
+            // 使用文件上传处理器
+            PictureUploadResult uploadResult = filePictureUpload.uploadPicture(file, uploadPathPrefix);
+            // 更新用户头像
+            User updateUser = new User();
+            updateUser.setId(id);
+            updateUser.setUserAvatar(uploadResult.getUrl());
+            boolean result = userService.updateById(updateUser);
+            ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "头像上传失败");
+        }
+        return ResultUtils.success(true);
+    }
 
 
 
