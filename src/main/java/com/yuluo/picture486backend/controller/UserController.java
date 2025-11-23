@@ -135,10 +135,14 @@ public class UserController {
     }
 
     @PostMapping("/update")
-    @Operation(summary = "【管理员】更新用户")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+    @Operation(summary = "更新用户")
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(userUpdateRequest == null || userUpdateRequest.getId() == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        // 权限检查：只有管理员或者本人可以更新当前登录的用户信息
+        if (!loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE) && !loginUser.getId().equals(userUpdateRequest.getId())){
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
+        }
         User user = new User();
         BeanUtil.copyProperties(userUpdateRequest, user);
         boolean result = userService.updateById(user);

@@ -43,7 +43,7 @@ public class CosManager {
         // 图片压缩（转成 webp 格式）
         String webpKey = FileUtil.mainName(key) + ".webp";
         PicOperations.Rule compressRule = new PicOperations.Rule();
-        compressRule.setRule("imageMogr2/format/webp/rquality/70");
+        compressRule.setRule("imageMogr2/format/webp/rquality/85");
         compressRule.setBucket(cosClientConfig.getBucket());
         compressRule.setFileId(webpKey);
         rules.add(compressRule);
