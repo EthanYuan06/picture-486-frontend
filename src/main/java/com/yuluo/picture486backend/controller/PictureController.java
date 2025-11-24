@@ -59,6 +59,10 @@ public class PictureController {
             HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         PictureVo pictureVo = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
+        
+        // 清除相关的分页缓存，确保前端能获取到最新的数据
+        clearPageCache();
+        
         return ResultUtils.success(pictureVo);
     }
 
@@ -70,6 +74,10 @@ public class PictureController {
         User loginUser = userService.getLoginUser(request);
         String fileUrl = pictureUploadRequest.getFileUrl();
         PictureVo pictureVo = pictureService.uploadPicture(fileUrl, pictureUploadRequest, loginUser);
+        
+        // 清除相关的分页缓存，确保前端能获取到最新的数据
+        clearPageCache();
+        
         return ResultUtils.success(pictureVo);
     }
 
@@ -91,6 +99,10 @@ public class PictureController {
         //操作数据库删除图片
         boolean result = pictureService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        
+        // 清除相关的分页缓存，确保前端能获取到最新的数据
+        clearPageCache();
+        
         return ResultUtils.success(true);
     }
 
@@ -118,6 +130,10 @@ public class PictureController {
         //操作数据库更新图片信息
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        
+        // 清除相关的分页缓存，确保前端能获取到最新的数据
+        clearPageCache();
+        
         return ResultUtils.success(true);
     }
 
@@ -249,6 +265,10 @@ public class PictureController {
         //操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        
+        // 清除相关的分页缓存，确保前端能获取到最新的数据
+        clearPageCache();
+        
         return ResultUtils.success(true);
     }
 
@@ -259,7 +279,21 @@ public class PictureController {
         ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         pictureService.doPictureReview(pictureReviewRequest, loginUser);
+        
+        // 清除相关的分页缓存，确保前端能获取到最新的数据
+        clearPageCache();
+        
         return ResultUtils.success(true);
+    }
+    
+    /**
+     * 清除分页缓存
+     */
+    private void clearPageCache() {
+        // 清除本地缓存
+        LOCAL_CACHE.invalidateAll();
+        // 清除Redis缓存中与图片列表相关的缓存
+        stringRedisTemplate.delete(stringRedisTemplate.keys("listPicture*"));
     }
 
     @GetMapping("/tag_category")

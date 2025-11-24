@@ -20,19 +20,18 @@ public class PictureCleanupScheduler {
     private PictureService pictureService;
 
     /**
-     * 每30天执行一次物理删除 isDelete=1 的数据
+     * 每一天执行一次物理删除 isDelete=1 的数据
      * cron表达式: 秒 分 时 日 月 周
      * 0 0 2 * * ? 表示每天凌晨2点执行
-     * 这里设置为每30天执行一次，在每月的1号凌晨2点执行
      */
-    @Scheduled(cron = "0 0 2 1 * ?")
+    @Scheduled(cron = "0 0 2 * * ?")
     public void cleanupDeletedPictures() {
         log.info("开始执行图片物理删除任务");
 
         try {
-            // 计算30天前的时间
-            LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-            Date thirtyDaysAgoDate = Date.from(thirtyDaysAgo.atZone(ZoneId.systemDefault()).toInstant());
+            // 计算1天前的时间
+            LocalDateTime oneDayAgo = LocalDateTime.now().minusDays(1);
+            Date thirtyDaysAgoDate = Date.from(oneDayAgo.atZone(ZoneId.systemDefault()).toInstant());
 
             // 查询 isDelete=1 且 updateTime 在30天前的数据
             QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
