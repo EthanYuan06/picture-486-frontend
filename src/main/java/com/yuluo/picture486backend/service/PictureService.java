@@ -12,10 +12,8 @@ import com.yuluo.picture486backend.model.vo.PictureVo;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
-* @author 东山千夏
-* @description 针对表【picture(图片)】的数据库操作Service
-* @createDate 2025-11-07 22:39:28
-*/
+ * @author 东山羽洛
+ */
 public interface PictureService extends IService<Picture> {
     /**
      * 上传图片

@@ -30,10 +30,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
-* @author 东山千夏
-* @ description 针对表【user(用户)】的数据库操作Service实现
-* @ createDate 2025-11-04 09:58:57
-*/
+ * @author 东山羽洛
+ */
 @Service
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>

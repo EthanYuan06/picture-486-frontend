@@ -8,7 +8,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Data
-public class SpaceVO implements Serializable {
+public class SpaceVo implements Serializable {
     /**
      * id
      */
@@ -77,7 +77,7 @@ public class SpaceVO implements Serializable {
      * @param spaceVO
      * @return
      */
-    public static Space voToObj(SpaceVO spaceVO) {
+    public static Space voToObj(SpaceVo spaceVO) {
         if (spaceVO == null) {
             return null;
         }
@@ -92,11 +92,11 @@ public class SpaceVO implements Serializable {
      * @param space
      * @return
      */
-    public static SpaceVO objToVo(Space space) {
+    public static SpaceVo objToVo(Space space) {
         if (space == null) {
             return null;
         }
-        SpaceVO spaceVO = new SpaceVO();
+        SpaceVo spaceVO = new SpaceVo();
         BeanUtils.copyProperties(space, spaceVO);
         return spaceVO;
     }
