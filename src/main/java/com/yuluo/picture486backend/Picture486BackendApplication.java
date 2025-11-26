@@ -11,7 +11,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @MapperScan("com.yuluo.picture486backend.mapper")
 @EnableAsync
 @EnableAspectJAutoProxy(exposeProxy = true)
-@EnableScheduling
 public class Picture486BackendApplication {
 
     public static void main(String[] args) {
