@@ -12,6 +12,7 @@ import com.yuluo.picture486backend.exception.ThrowUtils;
 import com.yuluo.picture486backend.model.dto.space.*;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.UserService;
@@ -21,7 +22,12 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/space")
 @Tag(name = "空间模块")
@@ -62,7 +68,6 @@ public class SpaceController {
         //操作数据库删除空间
         boolean result = spaceService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-
         return ResultUtils.success(true);
     }
 
@@ -167,4 +172,33 @@ public class SpaceController {
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
+
+    @GetMapping("/list/level")
+    @Operation(summary = "获取空间等级列表")
+    public BaseResponse<List<SpaceLevel>> listSpaceLevel() {
+        List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values()) // 获取所有枚举
+                .map(spaceLevelEnum -> new SpaceLevel(
+                        spaceLevelEnum.getValue(),
+                        spaceLevelEnum.getText(),
+                        spaceLevelEnum.getMaxCount(),
+                        spaceLevelEnum.getMaxSize()))
+                .collect(Collectors.toList());
+        return ResultUtils.success(spaceLevelList);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

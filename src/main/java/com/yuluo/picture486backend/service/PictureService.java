@@ -2,6 +2,7 @@ package com.yuluo.picture486backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuluo.picture486backend.model.dto.picture.PictureEditRequest;
 import com.yuluo.picture486backend.model.dto.picture.PictureQueryRequest;
 import com.yuluo.picture486backend.model.dto.picture.PictureReviewRequest;
 import com.yuluo.picture486backend.model.dto.picture.PictureUploadRequest;
@@ -80,4 +81,28 @@ public interface PictureService extends IService<Picture> {
      * @param oldPicture 旧图片信息
      */
     void clearPictureFile(Picture oldPicture);
+
+    /**
+     * 校验图片权限
+     *
+     * @param picture 图片信息
+     * @param loginUser 登录用户
+     */
+    void checkPictureAuth(User loginUser, Picture picture);
+
+    /**
+     * 删除图片
+     *
+     * @param pictureId 图片ID
+     * @param loginUser 登录用户
+     */
+    void deletePicture(long pictureId, User loginUser);
+
+    /**
+     * 修改图片
+     *
+     * @param pictureEditRequest 图片修改请求
+     * @param loginUser 登录用户
+     */
+    void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 }

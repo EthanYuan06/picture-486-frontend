@@ -21,8 +21,8 @@ public class PictureUpdateRequest implements Serializable {
     /**  
      * 简介  
      */  
-    private String introduction;  
-  
+    private String introduction;
+
     /**  
      * 分类  
      */  
