@@ -111,14 +111,14 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     }
 
     @Override
-    public void validSpace(Space space, boolean add) {
+    public void validSpace(Space space, boolean isAdd) {
         ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR);
         //从对象中取值
         String spaceName = space.getSpaceName();
         Integer spaceLevel = space.getSpaceLevel();
         SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
         //判断是否是创建空间
-        if (add) {
+        if (isAdd) {
             if (StrUtil.isBlank(spaceName)) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名不能为空");
             }

@@ -28,9 +28,9 @@ public interface SpaceService extends IService<Space> {
      * 校验空间信息
      *
      * @param space 空间
-     * @param add   判断是否是创建空间
+     * @param isAdd   判断是否是创建空间
      */
-    void validSpace(Space space, boolean add);
+    void validSpace(Space space, boolean isAdd);
 
     /**
      * 获取查询条件
