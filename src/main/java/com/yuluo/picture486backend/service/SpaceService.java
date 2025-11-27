@@ -2,11 +2,9 @@ package com.yuluo.picture486backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-
 import com.baomidou.mybatisplus.extension.service.IService;
-
+import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
 import com.yuluo.picture486backend.model.dto.space.SpaceQueryRequest;
-import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
@@ -16,6 +14,15 @@ import jakarta.servlet.http.HttpServletRequest;
  *
  */
 public interface SpaceService extends IService<Space> {
+
+    /**
+     * 创建空间
+     *
+     * @param spaceAddRequest 创建空间请求
+     * @param loginUser 当前登录用户
+     * @return 空间ID
+     */
+    long addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
 
     /**
      * 校验空间信息

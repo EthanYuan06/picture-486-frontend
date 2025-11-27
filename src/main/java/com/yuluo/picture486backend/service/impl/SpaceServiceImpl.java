@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
 import com.yuluo.picture486backend.model.dto.space.SpaceQueryRequest;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
@@ -23,11 +24,16 @@ import com.yuluo.picture486backend.mapper.SpaceMapper;
 import com.yuluo.picture486backend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +45,70 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private RedissonClient redissonClient;
+
+    @Override
+    public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
+        //dto转实体类
+        Space space = new Space();
+        BeanUtils.copyProperties(spaceAddRequest, space);
+        //设置默认数据
+        if (StrUtil.isBlank(spaceAddRequest.getSpaceName())){
+            space.setSpaceName("默认空间");
+        }
+        if (spaceAddRequest.getSpaceLevel() == null){
+            space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+        }
+        //填充参数默认值
+        this.fillSpaceBySpaceLevel(space);
+        //数据校验
+        this.validSpace(space, true);
+        Long userId = loginUser.getId();
+        //校验权限，不允许非管理员创建默认级别以上的空间
+        if (!userService.isAdmin(loginUser) && space.getSpaceLevel() != SpaceLevelEnum.COMMON.getValue()){
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您没有权限创建该空间");
+        }
+        //设置用户ID
+        space.setUserId(userId);
+        //限制同一用户仅允许创建一个空间，使用Redisson分布式锁 + 事务防止并发重复创建
+        String lockKey = "lock:space:create:" + userId;
+        RLock lock = redissonClient.getLock(lockKey);
+        try{
+            boolean locked = lock.tryLock(3, 5, TimeUnit.SECONDS);
+            if (!locked) {
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "操作频繁，请稍后再试");
+            }
+            //事务执行：先查后插，保证原子性
+            Long spaceId = transactionTemplate.execute(status -> {
+                //检查用户是否已创建空间
+                boolean exists = this.lambdaQuery().eq(Space::getUserId, userId).exists();
+                //若创建则抛出异常
+                if (exists) {
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前每个用户仅允许拥有一个空间");
+                }
+                //保存空间
+                boolean saved = this.save(space);
+                if (!saved) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建空间失败");
+                }
+                return space.getId();
+            });
+            return spaceId != null ? spaceId : 0;
+        }catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "获取锁被中断");
+        }finally{
+            // 释放锁
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
 
     @Override
     public void validSpace(Space space, boolean add) {

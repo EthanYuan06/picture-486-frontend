@@ -1,9 +1,6 @@
 package com.yuluo.picture486backend.controller;
 
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.yuluo.picture486backend.annotation.AuthCheck;
 import com.yuluo.picture486backend.common.BaseResponse;
 import com.yuluo.picture486backend.common.DeleteRequest;
@@ -23,17 +20,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 @RestController
 @RequestMapping("/space")
 @Tag(name = "空间模块")
@@ -45,6 +33,16 @@ public class SpaceController {
     @Resource
     private UserService userService;
 
+
+    @PostMapping("/add")
+    @Operation(summary = "创建空间")
+    public BaseResponse<Long> addSpace(@RequestBody SpaceAddRequest spaceAddRequest, HttpServletRequest request) {
+        if (spaceAddRequest == null || request == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        return ResultUtils.success(spaceService.addSpace(spaceAddRequest, loginUser));
+    }
 
     @PostMapping("/delete")
     @Operation(summary = "删除空间")
