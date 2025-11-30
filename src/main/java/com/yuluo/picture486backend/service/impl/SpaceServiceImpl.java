@@ -59,7 +59,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         BeanUtils.copyProperties(spaceAddRequest, space);
         //设置默认数据
         if (StrUtil.isBlank(spaceAddRequest.getSpaceName())){
-            space.setSpaceName("默认空间");
+            space.setSpaceName("默认相册");
         }
         if (spaceAddRequest.getSpaceLevel() == null){
             space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
@@ -69,13 +69,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         //数据校验
         this.validSpace(space, true);
         Long userId = loginUser.getId();
-        //校验权限，不允许非管理员创建默认级别以上的空间
+        //校验权限，不允许非管理员创建默认级别以上的相册
         if (!userService.isAdmin(loginUser) && space.getSpaceLevel() != SpaceLevelEnum.COMMON.getValue()){
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您没有权限创建该空间");
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您没有权限创建该相册");
         }
         //设置用户ID
         space.setUserId(userId);
-        //限制同一用户仅允许创建一个空间，使用Redisson分布式锁 + 事务防止并发重复创建
+        //限制同一用户仅允许创建一个相册，使用Redisson分布式锁 + 事务防止并发重复创建
         String lockKey = "lock:space:create:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
         try{
@@ -84,17 +84,20 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "操作频繁，请稍后再试");
             }
             //事务执行：先查后插，保证原子性
+            //创建相册：管理员可无限创建相册，用户最多创建 5 个相册
             Long spaceId = transactionTemplate.execute(status -> {
-                //检查用户是否已创建空间
-                boolean exists = this.lambdaQuery().eq(Space::getUserId, userId).exists();
-                //若创建则抛出异常
-                if (exists) {
-                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前每个用户仅允许拥有一个空间");
+                if (!userService.isAdmin(loginUser)) {
+                    //统计用户的相册数量
+                    long userSpaceCount = this.lambdaQuery().eq(Space::getUserId, userId).count();
+                    //若创建则抛出异常
+                    if (userSpaceCount >= 5) {
+                        throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前仅允许拥有5个相册");
+                    }
                 }
-                //保存空间
+                //保存相册
                 boolean saved = this.save(space);
                 if (!saved) {
-                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建空间失败");
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建相册失败");
                 }
                 return space.getId();
             });
@@ -117,21 +120,21 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         String spaceName = space.getSpaceName();
         Integer spaceLevel = space.getSpaceLevel();
         SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
-        //判断是否是创建空间
+        //判断是否是创建相册
         if (isAdd) {
             if (StrUtil.isBlank(spaceName)) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名不能为空");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册名不能为空");
             }
             if (spaceLevel == null) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间等级不能为空");
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册等级不能为空");
             }
         }
-        //修改数据时，更改空间级别时的判定
+        //修改数据时，更改相册级别时的判定
         if (spaceLevel != null && spaceLevelEnum == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间等级不存在");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册等级不存在");
         }
         if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 24) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "空间名称过长");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册名称过长");
         }
     }
 
@@ -177,16 +180,16 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Override
     public Page<SpaceVo> getSpaceVoPage(Page<Space> spacePage, HttpServletRequest request) {
-        //获取空间列表
+        //获取相册列表
         List<Space> spaceList = spacePage.getRecords();
         Page<SpaceVo> spaceVoPage = new Page<>(spacePage.getCurrent(), spacePage.getSize(), spacePage.getTotal());
         if (CollUtil.isEmpty(spaceList)){
             return spaceVoPage;
         }
-        //从空间列表中获取每个空间对象，转换为Vo脱敏，再统一封装到新的列表
+        //从相册列表中获取每个相册对象，转换为Vo脱敏，再统一封装到新的列表
         List<SpaceVo> spaceVoList = spaceList.stream().map(SpaceVo::objToVo).toList();
         //关联查询用户信息（去重，使用Set集合）
-        //1.从空间列表中提取所有不重复的用户ID
+        //1.从相册列表中提取所有不重复的用户ID
         Set<Long> userIdSet = spaceList.stream().map(Space::getUserId).collect(Collectors.toSet());
         //2.批量获取用户信息，并按用户ID进行分组
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
@@ -205,10 +208,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Override
     public void fillSpaceBySpaceLevel(Space space) {
-        //获取空间级别
+        //获取相册级别
         Integer spaceLevel = space.getSpaceLevel();
         SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
-        //根据空间级别填充限额
+        //根据相册级别填充限额
         if (spaceLevelEnum != null){
             //获取容量限额
             long maxSize = spaceLevelEnum.getMaxSize();

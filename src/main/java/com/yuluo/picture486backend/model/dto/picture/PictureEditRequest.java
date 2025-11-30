@@ -11,8 +11,13 @@ public class PictureEditRequest implements Serializable {
     /**  
      * id  
      */  
-    private Long id;  
-  
+    private Long id;
+
+    /**
+     * 图片所属空间
+     */
+    private Long spaceId;
+
     /**  
      * 图片名称  
      */  

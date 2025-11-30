@@ -169,6 +169,16 @@ public class PictureController {
 //        ));
         long current = pictureQueryRequest.getCurrent();
         long size = pictureQueryRequest.getPageSize();
+        //公开图库
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        if(spaceId == null){
+            pictureQueryRequest.setNullSpaceId(true);
+        }else {
+            //私有空间
+            //todo 前端：在“空间管理”的空间分页添加“进入”按钮，进入到对应用户的空间即发起管理员分页请求
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
+        }
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
         return ResultUtils.success(picturePage);
@@ -213,6 +223,7 @@ public class PictureController {
     }
 
 
+    @PostMapping("/edit")
     @Operation(summary = "编辑图片")
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest, HttpServletRequest request) {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0){

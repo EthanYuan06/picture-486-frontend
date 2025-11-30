@@ -14,7 +14,7 @@ import java.io.Serializable;
 public class SpaceQueryRequest extends PageRequest implements Serializable {
 
     /**
-     * id
+     * 空间 id
      */
     private Long id;
 

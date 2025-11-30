@@ -10,9 +10,6 @@ import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
 import jakarta.servlet.http.HttpServletRequest;
 
-/**
- *
- */
 public interface SpaceService extends IService<Space> {
 
     /**
