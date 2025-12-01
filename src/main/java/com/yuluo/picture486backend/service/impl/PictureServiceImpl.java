@@ -194,10 +194,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Integer reviewStatus = pictureQueryRequest.getReviewStatus();
         String reviewMessage = pictureQueryRequest.getReviewMessage();
         Long reviewerId = pictureQueryRequest.getReviewerId();
-        String createTimeStart = pictureQueryRequest.getCreateTimeStart();
-        String createTimeEnd = pictureQueryRequest.getCreateTimeEnd();
-        String editTimeStart = pictureQueryRequest.getEditTimeStart();
-        String editTimeEnd = pictureQueryRequest.getEditTimeEnd();
+        Date createTimeStart = pictureQueryRequest.getCreateTimeStart();
+        Date createTimeEnd = pictureQueryRequest.getCreateTimeEnd();
+        Date editTimeStart = pictureQueryRequest.getEditTimeStart();
+        Date editTimeEnd = pictureQueryRequest.getEditTimeEnd();
+
+//        String createTimeStart = pictureQueryRequest.getCreateTimeStart();
+//        String createTimeEnd = pictureQueryRequest.getCreateTimeEnd();
+//        String editTimeStart = pictureQueryRequest.getEditTimeStart();
+//        String editTimeEnd = pictureQueryRequest.getEditTimeEnd();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
 
@@ -237,22 +242,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 queryWrapper.like("tags", "\"" + tag + "\"");//转义格式
             }
         }
-        // 创建时间范围查询
-        if (createTimeStart != null || createTimeEnd != null) {
-            DateTime startTime = DateUtil.parse(createTimeStart, "yyyy-MM-dd");
-            DateTime endTime = DateUtil.parse(createTimeEnd, "yyyy-MM-dd");
-            DateTime startOfDay = DateUtil.beginOfDay(startTime);
-            DateTime endOfDay = DateUtil.endOfDay(endTime);
-            queryWrapper.between("createTime", startOfDay, endOfDay);
-        }
-        // 编辑时间范围查询
-        if (editTimeStart != null || editTimeEnd != null) {
-            DateTime startTime = DateUtil.parse(editTimeStart, "yyyy-MM-dd");
-            DateTime endTime = DateUtil.parse(editTimeEnd, "yyyy-MM-dd");
-            DateTime startOfDay = DateUtil.beginOfDay(startTime);
-            DateTime endOfDay = DateUtil.endOfDay(endTime);
-            queryWrapper.between("editTime", startOfDay, endOfDay);
-        }
+        //>= createTimeStart
+        queryWrapper.ge(ObjUtil.isNotEmpty(createTimeStart), "createTime", createTimeStart);
+        //< createTimeEnd
+        queryWrapper.le(ObjUtil.isNotEmpty(createTimeEnd), "createTime", createTimeEnd);
+        //>= editTimeStart
+        queryWrapper.ge(ObjUtil.isNotEmpty(editTimeStart), "editTime", editTimeStart);
+        //< editTimeEnd
+        queryWrapper.le(ObjUtil.isNotEmpty(editTimeEnd), "editTime", editTimeEnd);
+
         //排序
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("asc"), sortField);
         return queryWrapper;

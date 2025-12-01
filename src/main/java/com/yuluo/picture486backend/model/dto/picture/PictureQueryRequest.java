@@ -1,5 +1,6 @@
 package com.yuluo.picture486backend.model.dto.picture;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yuluo.picture486backend.common.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -101,22 +102,26 @@ public class PictureQueryRequest extends PageRequest implements Serializable {
     /**
      * 创建时间开始
      */
-    private String createTimeStart;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTimeStart;
 
     /**
      * 创建时间结束
      */
-    private String createTimeEnd;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date createTimeEnd;
 
     /**
      * 编辑时间开始
      */
-    private String editTimeStart;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date editTimeStart;
 
     /**
      * 编辑时间结束
      */
-    private String editTimeEnd;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private Date editTimeEnd;
 
     private static final long serialVersionUID = 1L;  
 }
