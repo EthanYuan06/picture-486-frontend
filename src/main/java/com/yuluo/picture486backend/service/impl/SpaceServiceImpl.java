@@ -7,6 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yuluo.picture486backend.constant.SpaceConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
@@ -57,15 +58,16 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         //dto转实体类
         Space space = new Space();
         BeanUtils.copyProperties(spaceAddRequest, space);
-        //设置默认数据
+        //设置默认相册名称与等级
         if (StrUtil.isBlank(spaceAddRequest.getSpaceName())){
-            space.setSpaceName("默认相册");
+            space.setSpaceName(SpaceConstant.DEFAULT_SPACE_NAME);
         }
         if (spaceAddRequest.getSpaceLevel() == null){
             space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
         }
-        //填充参数默认值
+        //设置默认限额与封面
         this.fillSpaceBySpaceLevel(space);
+        space.setSpaceCover(SpaceConstant.DEFAULT_SPACE_COVER);
         //数据校验
         this.validSpace(space, true);
         Long userId = loginUser.getId();
@@ -75,7 +77,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
         //设置用户ID
         space.setUserId(userId);
-        //限制同一用户仅允许创建一个相册，使用Redisson分布式锁 + 事务防止并发重复创建
+        //限制同一用户仅允许创建5个相册，使用Redisson分布式锁 + 事务防止并发重复创建
         String lockKey = "lock:space:create:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
         try{
@@ -91,7 +93,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     long userSpaceCount = this.lambdaQuery().eq(Space::getUserId, userId).count();
                     //若创建则抛出异常
                     if (userSpaceCount >= 5) {
-                        throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前仅允许拥有5个相册");
+                        throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前普通用户仅允许拥有5个相册");
                     }
                 }
                 //保存相册

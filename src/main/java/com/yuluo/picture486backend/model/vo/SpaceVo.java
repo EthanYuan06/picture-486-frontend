@@ -20,6 +20,11 @@ public class SpaceVo implements Serializable {
     private String spaceName;
 
     /**
+     * 空间封面
+     */
+    private String spaceCover;
+
+    /**
      * 空间级别：0-普通版 1-专业版 2-旗舰版
      */
     private Integer spaceLevel;
@@ -73,9 +78,6 @@ public class SpaceVo implements Serializable {
 
     /**
      * 封装类转对象
-     *
-     * @param spaceVO
-     * @return
      */
     public static Space voToObj(SpaceVo spaceVO) {
         if (spaceVO == null) {
@@ -88,9 +90,6 @@ public class SpaceVo implements Serializable {
 
     /**
      * 对象转封装类
-     *
-     * @param space
-     * @return
      */
     public static SpaceVo objToVo(Space space) {
         if (space == null) {

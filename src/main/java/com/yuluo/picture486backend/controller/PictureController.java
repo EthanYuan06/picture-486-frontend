@@ -175,7 +175,7 @@ public class PictureController {
             pictureQueryRequest.setNullSpaceId(true);
         }else {
             //私有空间
-            //todo 前端：在“空间管理”的空间分页添加“进入”按钮，进入到对应用户的空间即发起管理员分页请求
+            //校验空间是否存在
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "空间不存在");
         }

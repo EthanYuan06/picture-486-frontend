@@ -8,7 +8,6 @@ import lombok.Data;
 
 /**
  * 空间
- * @TableName space
  */
 @TableName(value ="space")
 @Data
@@ -23,6 +22,16 @@ public class Space implements Serializable {
      * 空间名称
      */
     private String spaceName;
+
+    /**
+     * 空间简介
+     */
+//    private String spaceDesc;
+
+    /**
+     * 空间封面
+     */
+    private String spaceCover;
 
     /**
      * 空间级别：0-普通版 1-专业版 2-旗舰版
