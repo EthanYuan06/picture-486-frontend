@@ -2,15 +2,15 @@ package com.yuluo.picture486backend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yuluo.picture486backend.model.dto.picture.PictureEditRequest;
-import com.yuluo.picture486backend.model.dto.picture.PictureQueryRequest;
-import com.yuluo.picture486backend.model.dto.picture.PictureReviewRequest;
-import com.yuluo.picture486backend.model.dto.picture.PictureUploadRequest;
+import com.yuluo.picture486backend.model.dto.picture.*;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.vo.PictureVo;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * @author 东山羽洛
@@ -105,4 +105,19 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser 登录用户
      */
     void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
+
+    /**
+     * 获取图片信息
+     */
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
+
+    /**
+     * 批量上传图片
+     *
+     * @param multipartFiles 图片文件
+     * @param pictureUploadRequest 图片上传请求
+     * @param loginUser 登录用户
+     * @return 图片信息
+     */
+    List<PictureVo> uploadPictures(MultipartFile[] multipartFiles, PictureUploadRequest pictureUploadRequest, User loginUser);
 }

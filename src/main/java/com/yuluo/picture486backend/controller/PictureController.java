@@ -244,12 +244,39 @@ public class PictureController {
         return ResultUtils.success(true);
     }
 
+    @PostMapping("/edit/batch")
+    @Operation(summary = "批量更新图片")
+    public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        return ResultUtils.success(true);
+    }
+
+    @PostMapping("/upload/batch")
+    @Operation(summary = "批量上传图片")
+    public BaseResponse<List<PictureVo>> uploadPictureByBatch(
+            @RequestPart("file") MultipartFile[] multipartFiles,
+            PictureUploadRequest pictureUploadRequest,
+            HttpServletRequest request) {
+        //用户校验
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        // 参数校验
+        ThrowUtils.throwIf(multipartFiles == null || multipartFiles.length == 0, ErrorCode.PARAMS_ERROR, "未选择任何文件");
+        ThrowUtils.throwIf(multipartFiles.length > 10, ErrorCode.PARAMS_ERROR, "单次上传文件数量不能超过10个");
+
+        // 批量上传处理
+        List<PictureVo> pictureVos = pictureService.uploadPictures(multipartFiles, pictureUploadRequest, loginUser);
+        return ResultUtils.success(pictureVos);
+    }
+
     @GetMapping("/tag_category")
     @Operation(summary = "标签和分类")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
-        List<String> tagList = Arrays.asList("女仆", "日本旅行", "校园", "二次元", "壁纸");
-        List<String> categoryList = Arrays.asList("模板", "电商", "表情包", "素材", "海报");
+        List<String> tagList = Arrays.asList("动漫", "日本旅行", "风景", "表情", "壁纸");
+        List<String> categoryList = Arrays.asList("模板", "二次元", "回忆", "素材", "旅游");
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);
