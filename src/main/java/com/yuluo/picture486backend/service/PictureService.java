@@ -107,9 +107,12 @@ public interface PictureService extends IService<Picture> {
     void editPicture(PictureEditRequest pictureEditRequest, User loginUser);
 
     /**
-     * 获取图片信息
+     * 批量编辑图片
+     *
+     * @param pictureEditByBatchRequest 图片批量修改请求
+     * @param loginUser 登录用户
      */
-    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
+    void editPictures(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser);
 
     /**
      * 批量上传图片
@@ -120,4 +123,13 @@ public interface PictureService extends IService<Picture> {
      * @return 图片信息
      */
     List<PictureVo> uploadPictures(MultipartFile[] multipartFiles, PictureUploadRequest pictureUploadRequest, User loginUser);
+
+    /**
+     * 批量删除图片
+     *
+     * @param pictureIds 图片ID列表
+     * @param loginUser 登录用户
+     * @return 是否删除成功
+     */
+    Boolean deletePictures(List<Long> pictureIds, User loginUser);
 }

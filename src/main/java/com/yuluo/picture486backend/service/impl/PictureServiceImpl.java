@@ -476,7 +476,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser) {
+    public void editPictures(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser) {
         //获取属性值
         List<Long> pictureIdList = pictureEditByBatchRequest.getPictureIdList();
         Long spaceId = pictureEditByBatchRequest.getSpaceId();
@@ -558,6 +558,72 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
         return pictureVos;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean deletePictures(List<Long> pictureIds, User loginUser) {
+        //参数校验
+        ThrowUtils.throwIf(CollUtil.isEmpty(pictureIds), ErrorCode.PARAMS_ERROR, "没有待删除图片");
+        
+        //根据第一张图片获取相册信息
+        Picture picture = this.getById(pictureIds.get(0));
+        ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
+        
+        Space space = null;
+        if (picture.getSpaceId() != null) {
+            // 私有相册中的图片
+            space = spaceService.getById(picture.getSpaceId());
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
+            
+            //校验权限：只有相册创建人才能删除
+            if (!loginUser.getId().equals(space.getUserId())){
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限操作该相册");
+            }
+        } else {
+            // 公共图库中的图片，只有管理员可以批量删除
+            if (!userService.isAdmin(loginUser)){
+                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无图片批量删除权限");
+            }
+        }
+        
+        //查询所有要删除的图片信息
+        List<Picture> picturesToDelete = this.listByIds(pictureIds);
+        
+        // 检查是否所有图片都在同一个相册中（如果在相册中）
+        if (space != null) {
+            //为了保证线程安全，这里不使用lambda表达式，因为lambda要求space不会被重新赋值，即space是有效final变量
+            for (Picture p : picturesToDelete) {
+                if (!space.getId().equals(p.getSpaceId())) {
+                    throw new BusinessException(ErrorCode.PARAMS_ERROR, "所选图片不在同一相册中");
+                }
+            }
+        }
+        
+        //执行删除操作
+        boolean result = this.removeByIds(pictureIds);//这里不用removeBatchByIds，因为只是小数据量删除（< 100 条）
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片批量删除失败");
+        
+        //更新相册额度
+        if (space != null) {
+            //获取每个待删除图片的体积，并求和
+            long totalSize = picturesToDelete.stream()
+                    .mapToLong(Picture::getPicSize)
+                    .sum();
+            int totalCount = picturesToDelete.size();
+            
+            Space updateSpace = new Space();
+            updateSpace.setId(space.getId());
+            updateSpace.setTotalSize(space.getTotalSize() - totalSize);
+            updateSpace.setTotalCount(space.getTotalCount() - totalCount);
+            boolean updateResult = spaceService.updateById(updateSpace);
+            ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新相册额度失败");
+        }
+        
+        //异步删除存储桶中的实际文件
+        picturesToDelete.forEach(this::clearPictureFile);
+        
+        return result;
     }
 
     /**

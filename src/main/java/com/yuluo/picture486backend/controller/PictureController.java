@@ -29,10 +29,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -245,11 +247,11 @@ public class PictureController {
     }
 
     @PostMapping("/edit/batch")
-    @Operation(summary = "批量更新图片")
+    @Operation(summary = "批量编辑图片")
     public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
+        pictureService.editPictures(pictureEditByBatchRequest, loginUser);
         return ResultUtils.success(true);
     }
 
@@ -271,6 +273,21 @@ public class PictureController {
         return ResultUtils.success(pictureVos);
     }
 
+    @PostMapping("/delete/batch")
+    @Operation(summary = "批量删除图片")
+    public BaseResponse<Boolean> deletePictureByBatch(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        List<Long> PictureIds = deleteRequest.getIds();
+        //参数校验
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        // 双重判断ids是否传递，以及传递了是否为空列表
+        if (PictureIds == null || PictureIds.isEmpty()){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "未选择图片");
+        }
+        //批量删除图片
+        Boolean result = pictureService.deletePictures(PictureIds, loginUser);
+        return ResultUtils.success(result);
+    }
     @GetMapping("/tag_category")
     @Operation(summary = "标签和分类")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
