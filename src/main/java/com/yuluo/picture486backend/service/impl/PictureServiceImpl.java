@@ -607,7 +607,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //执行删除操作
         boolean result = this.removeByIds(pictureIds);//这里不用removeBatchByIds，因为只是小数据量删除（< 100 条）
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片批量删除失败");
-        
+        //异步删除存储桶中的实际文件
+        picturesToDelete.forEach(this::clearPictureFile);
         //更新相册额度
         if (space != null) {
             //获取每个待删除图片的体积，并求和
@@ -624,8 +625,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新相册额度失败");
         }
         
-        //异步删除存储桶中的实际文件
-        picturesToDelete.forEach(this::clearPictureFile);
+
 
         //批量删除计时结束
         long endTime = System.currentTimeMillis();

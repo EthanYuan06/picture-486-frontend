@@ -4,13 +4,8 @@ spring:
   #最大上传文件体积
   servlet:
     multipart:
-      max-file-size: 15MB
-      max-request-size: 15MB
-server:
-  servlet:
-    context-path: /api
-    session:
-      timeout: 1h
+      max-file-size: 100MB
+      max-request-size: 100MB
 
 
 

@@ -8,7 +8,8 @@ import org.springframework.util.unit.DataSize;
 import jakarta.servlet.MultipartConfigElement;
 
 /**
- * 文件上传配置
+ * 文件上传配置类
+ * 设置单次批量上传最大总体积、单次请求上传最大总体积
  */
 @Configuration
 public class MultipartConfig {
@@ -16,10 +17,8 @@ public class MultipartConfig {
     @Bean
     public MultipartConfigElement multipartConfigElement() {
         MultipartConfigFactory factory = new MultipartConfigFactory();
-        // 单个文件最大大小
-        factory.setMaxFileSize(DataSize.ofMegabytes(15));
-        // 请求总大小最大值
-        factory.setMaxRequestSize(DataSize.ofMegabytes(15));
+        factory.setMaxFileSize(DataSize.ofMegabytes(100));
+        factory.setMaxRequestSize(DataSize.ofMegabytes(100));
         return factory.createMultipartConfig();
     }
 }
