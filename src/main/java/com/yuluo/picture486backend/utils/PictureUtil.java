@@ -46,7 +46,28 @@ public class PictureUtil {
         List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "webp");
         return allowedExtensions.contains(fileExtension.toLowerCase());
     }
-    
+
+    /**
+     * 过滤出符合要求的图片文件
+     *
+     * @param files 图片文件数组
+     * @return 符合要求的图片文件数组
+     */
+    public static MultipartFile[] filterAllowedImages(MultipartFile[] files) {
+        if (files == null) {
+            return new MultipartFile[0];
+        }
+        List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "webp");
+        return Arrays.stream(files)
+                .filter(file -> file != null && file.getOriginalFilename() != null)
+                .filter(file -> {
+                    String fileName = file.getOriginalFilename();
+                    String fileExtension = getFileExtension(fileName);
+                    return allowedExtensions.contains(fileExtension.toLowerCase());
+                })
+                .toArray(MultipartFile[]::new);
+    }
+
     /**
      * 从文件名中提取文件扩展名
      * 
@@ -59,4 +80,6 @@ public class PictureUtil {
         }
         return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
     }
+
+
 }

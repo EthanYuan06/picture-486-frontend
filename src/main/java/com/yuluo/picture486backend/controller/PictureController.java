@@ -1,7 +1,5 @@
 package com.yuluo.picture486backend.controller;
 
-
-import cn.hutool.core.util.ObjUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -25,29 +23,25 @@ import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.manager.CacheManager;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486backend.utils.PictureUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.ibatis.annotations.Delete;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+
 
 @RestController
 @RequestMapping("/picture")
 @Tag(name = "图片模块")
+@Slf4j
 public class PictureController {
 
     @Resource
@@ -74,6 +68,8 @@ public class PictureController {
         //用户校验
         User loginUser = userService.getLoginUser(request);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        //校验是否是支持的图片格式
+        ThrowUtils.throwIf(!PictureUtil.isAllowedImageFormat(multipartFile), ErrorCode.PARAMS_ERROR, "图片格式不支持");
         PictureVo pictureVo = pictureService.uploadPicture(multipartFile, pictureUploadRequest, loginUser);
         return ResultUtils.success(pictureVo);
     }
@@ -267,9 +263,11 @@ public class PictureController {
         // 参数校验
         ThrowUtils.throwIf(multipartFiles == null || multipartFiles.length == 0, ErrorCode.PARAMS_ERROR, "未选择任何文件");
         ThrowUtils.throwIf(multipartFiles.length > 20, ErrorCode.PARAMS_ERROR, "单次上传文件数量不能超过20个");
-
+        //格式校验，只上传符合后缀要求的图片
+        MultipartFile[] AllowedMultipartFiles = PictureUtil.filterAllowedImages(multipartFiles);
+        log.info("实际上传图片数量：{}", AllowedMultipartFiles.length);
         // 批量上传处理
-        List<PictureVo> pictureVos = pictureService.uploadPictures(multipartFiles, pictureUploadRequest, loginUser);
+        List<PictureVo> pictureVos = pictureService.uploadPictures(AllowedMultipartFiles, pictureUploadRequest, loginUser);
         return ResultUtils.success(pictureVos);
     }
 
