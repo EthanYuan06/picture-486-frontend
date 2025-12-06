@@ -356,7 +356,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     /**
-     * 删除图片
+     * 删除存储桶图片
      * @param oldPicture 旧图片信息
      */
     @Async
@@ -367,7 +367,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long count = this.lambdaQuery()
                 .eq(Picture::getUrl, pictureUrl)
                 .count();
-        //若被多条记录使用，不清理
+        //若被多条记录使用，不清理，可以允许等到最后一处引用删除
         if(count > 1){
             log.info("图片被多条记录使用，不进行清理");
             return;
@@ -563,6 +563,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean deletePictures(List<Long> pictureIds, User loginUser) {
+        //删除计时开始
+        long startTime = System.currentTimeMillis();
+        log.info("开始批量删除图片，图片数量: {}", pictureIds.size());
+
         //参数校验
         ThrowUtils.throwIf(CollUtil.isEmpty(pictureIds), ErrorCode.PARAMS_ERROR, "没有待删除图片");
         
@@ -622,7 +626,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         
         //异步删除存储桶中的实际文件
         picturesToDelete.forEach(this::clearPictureFile);
-        
+
+        //批量删除计时结束
+        long endTime = System.currentTimeMillis();
+        log.info("批量删除图片完成，图片数量: {}，耗时: {} ms", pictureIds.size(), (endTime - startTime));
         return result;
     }
 

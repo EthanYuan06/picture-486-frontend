@@ -266,7 +266,7 @@ public class PictureController {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         // 参数校验
         ThrowUtils.throwIf(multipartFiles == null || multipartFiles.length == 0, ErrorCode.PARAMS_ERROR, "未选择任何文件");
-        ThrowUtils.throwIf(multipartFiles.length > 10, ErrorCode.PARAMS_ERROR, "单次上传文件数量不能超过10个");
+        ThrowUtils.throwIf(multipartFiles.length > 20, ErrorCode.PARAMS_ERROR, "单次上传文件数量不能超过20个");
 
         // 批量上传处理
         List<PictureVo> pictureVos = pictureService.uploadPictures(multipartFiles, pictureUploadRequest, loginUser);
