@@ -13,19 +13,19 @@ import jakarta.servlet.http.HttpServletRequest;
 public interface SpaceService extends IService<Space> {
 
     /**
-     * 创建空间
+     * 创建相册
      *
-     * @param spaceAddRequest 创建空间请求
+     * @param spaceAddRequest 创建相册请求
      * @param loginUser 当前登录用户
-     * @return 空间ID
+     * @return 相册ID
      */
     long addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
 
     /**
-     * 校验空间信息
+     * 校验相册信息
      *
-     * @param space 空间
-     * @param isAdd   判断是否是创建空间
+     * @param space 相册
+     * @param isAdd   判断是否是创建相册
      */
     void validSpace(Space space, boolean isAdd);
 
@@ -38,41 +38,36 @@ public interface SpaceService extends IService<Space> {
     QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest);
 
     /**
-     * 获取空间信息
+     * 获取相册信息
      *
-     * @param space   空间信息
+     * @param space   相册信息
      * @param request 登录请求
-     * @return 空间信息
+     * @return 相册信息
      */
     SpaceVo getSpaceVo(Space space, HttpServletRequest request);
 
     /**
-     * 获取空间分页列表
+     * 获取相册分页列表
      *
-     * @param spacePage 空间分页
+     * @param spacePage 相册分页
      * @param request   登录请求
-     * @return 空间列表
+     * @return 相册列表
      */
     Page<SpaceVo> getSpaceVoPage(Page<Space> spacePage, HttpServletRequest request);
 
     /**
-     * 根据空间等级填充空间信息
-     * 支持管理员自定义空间限额、数量限额
-     * @param space 空间信息
+     * 根据相册等级填充相册信息
+     * 支持管理员自定义相册限额、数量限额
+     * @param space 相册信息
      */
     void fillSpaceBySpaceLevel(Space space);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * 检查相册权限
+     *
+     * @param space   相册信息
+     * @param loginUser 当前登录用户
+     */
+    void checkSpaceAuth(Space space, User loginUser);
 }

@@ -67,9 +67,7 @@ public class SpaceController {
         Space oldSpace = spaceService.getById(spaceId);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         //仅本人或管理员可删除
-        if (!oldSpace.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
+        spaceService.checkSpaceAuth(oldSpace, loginUser);
         //判断用户是否输入了确认删除的信息，管理员不需要输入确认文本
         if (!userService.isAdmin(loginUser)){
             ThrowUtils.throwIf(deleteRequest.getDelConfirmInfo() == null, ErrorCode.PARAMS_ERROR, "请输入确认删除文本");
@@ -180,9 +178,7 @@ public class SpaceController {
         Space oldSpace = spaceService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         //仅本人或管理员可编辑
-        if (!oldSpace.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
+        spaceService.checkSpaceAuth(oldSpace, loginUser);
         //操作数据库
         boolean result = spaceService.updateById(space);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
