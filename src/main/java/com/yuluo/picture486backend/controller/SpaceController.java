@@ -15,6 +15,7 @@ import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
 import com.yuluo.picture486backend.model.vo.UserVo;
+import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +41,9 @@ public class SpaceController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private PictureService pictureService;
+
 
     @PostMapping("/add")
     @Operation(summary = "创建相册")
@@ -58,17 +62,28 @@ public class SpaceController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        Long id = deleteRequest.getId();
+        Long spaceId = deleteRequest.getId();
         //判断相册是否存在
-        Space oldSpace = spaceService.getById(id);
+        Space oldSpace = spaceService.getById(spaceId);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         //仅本人或管理员可删除
         if (!oldSpace.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
+        //判断用户是否输入了确认删除的信息，管理员不需要输入确认文本
+        if (!userService.isAdmin(loginUser)){
+            ThrowUtils.throwIf(deleteRequest.getDelConfirmInfo() == null, ErrorCode.PARAMS_ERROR, "请输入确认删除文本");
+            if (!deleteRequest.getDelConfirmInfo().equals("我确定要删除此相册")){
+                throw new BusinessException(ErrorCode.OPERATION_ERROR, "请输入指定的文本");
+            }
+        }
+        //先删除该相册下的所有图片
+        List<Long> pictureIdsToDel = pictureService.getPictureIds(spaceId);
+        Boolean isDelPictures = pictureService.deletePictures(pictureIdsToDel, loginUser);
+        ThrowUtils.throwIf(!isDelPictures, ErrorCode.OPERATION_ERROR, "删除相册所有图片失败");
         //操作数据库删除相册
-        boolean result = spaceService.removeById(id);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        boolean isDelSpace = spaceService.removeById(spaceId);
+        ThrowUtils.throwIf(!isDelSpace, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
 

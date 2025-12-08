@@ -21,5 +21,10 @@ public class DeleteRequest implements Serializable {
      */
     private List<Long> ids;
 
+    /**
+     * 删除确认文本
+     */
+    private String delConfirmInfo;
+
     private static final long serialVersionUID = 1L;
 }

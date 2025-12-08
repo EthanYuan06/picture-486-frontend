@@ -132,4 +132,33 @@ public interface PictureService extends IService<Picture> {
      * @return 是否删除成功
      */
     Boolean deletePictures(List<Long> pictureIds, User loginUser);
+
+    /**
+     * 获取图片ID列表
+     *
+     * @param spaceId 空间ID
+     * @return 图片ID列表
+     */
+    List<Long> getPictureIds(Long spaceId);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

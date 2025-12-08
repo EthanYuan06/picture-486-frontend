@@ -563,13 +563,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean deletePictures(List<Long> pictureIds, User loginUser) {
-        //删除计时开始
-        long startTime = System.currentTimeMillis();
-        log.info("开始批量删除图片，图片数量: {}", pictureIds.size());
-
-        //参数校验
-        ThrowUtils.throwIf(CollUtil.isEmpty(pictureIds), ErrorCode.PARAMS_ERROR, "没有待删除图片");
-        
+//        //删除计时开始
+//        long startTime = System.currentTimeMillis();
+//        log.info("开始批量删除图片，图片数量: {}", pictureIds.size());
+        if (pictureIds.isEmpty()) {
+            return true; // 无图片可删，返回成功
+        }
         //根据第一张图片获取相册信息
         Picture picture = this.getById(pictureIds.get(0));
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
@@ -607,8 +606,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //执行删除操作
         boolean result = this.removeByIds(pictureIds);//这里不用removeBatchByIds，因为只是小数据量删除（< 100 条）
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片批量删除失败");
-        //异步删除存储桶中的实际文件
-        picturesToDelete.forEach(this::clearPictureFile);
+
         //更新相册额度
         if (space != null) {
             //获取每个待删除图片的体积，并求和
@@ -624,13 +622,22 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             boolean updateResult = spaceService.updateById(updateSpace);
             ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新相册额度失败");
         }
-        
-
-
-        //批量删除计时结束
-        long endTime = System.currentTimeMillis();
-        log.info("批量删除图片完成，图片数量: {}，耗时: {} ms", pictureIds.size(), (endTime - startTime));
+        //异步删除存储桶中的实际文件
+        picturesToDelete.forEach(this::clearPictureFile);
+//        //批量删除计时结束
+//        long endTime = System.currentTimeMillis();
+//        log.info("批量删除图片完成，图片数量: {}，耗时: {} ms", pictureIds.size(), (endTime - startTime));
         return result;
+    }
+
+    @Override
+    public List<Long> getPictureIds(Long spaceId) {
+        //校验参数
+        ThrowUtils.throwIf(spaceId == null, ErrorCode.PARAMS_ERROR, "相册ID不能为空");
+        //根据相册ID查询所有相关图片，并收集这些图片的ID到列表中，即指定空间下所有的图片ID
+        return lambdaQuery().eq(Picture::getSpaceId, spaceId).list().stream()
+                .map(Picture::getId)
+                .toList();
     }
 
     /**
