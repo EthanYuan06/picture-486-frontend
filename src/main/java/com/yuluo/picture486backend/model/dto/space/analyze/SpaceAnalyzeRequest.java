@@ -1,17 +1,17 @@
-package com.yuluo.picture486backend.model.dto.space.analysis;
+package com.yuluo.picture486backend.model.dto.space.analyze;
 
 import lombok.Data;
 
 import java.io.Serializable;
 
 /**
- * 空间分析请求
+ * 相册分析请求
  * 作为各种分析请求的父类
  */
 @Data
 public class SpaceAnalyzeRequest implements Serializable {
     /**
-     * 空间 ID
+     * 相册 ID
      */
     private Long spaceId;
 
@@ -21,7 +21,7 @@ public class SpaceAnalyzeRequest implements Serializable {
     private boolean queryPublic;
 
     /**
-     * 全空间分析
+     * 全相册分析
      */
     private boolean queryAll;
 

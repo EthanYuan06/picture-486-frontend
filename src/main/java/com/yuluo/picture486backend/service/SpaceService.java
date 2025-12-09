@@ -64,7 +64,7 @@ public interface SpaceService extends IService<Space> {
 
 
     /**
-     * 检查相册权限
+     * 检查相册访问权限
      *
      * @param space   相册信息
      * @param loginUser 当前登录用户
