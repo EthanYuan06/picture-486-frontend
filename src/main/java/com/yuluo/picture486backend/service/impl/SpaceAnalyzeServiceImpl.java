@@ -17,6 +17,7 @@ import com.yuluo.picture486backend.service.SpaceAnalyzeService;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.UserService;
 import jakarta.annotation.Resource;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+@Service
 public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
 
     @Resource
@@ -47,9 +49,13 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
             //统计公共图库资源使用
             QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
             queryWrapper.select("picSize");
-            //若分析相册则查询相册id
-            if (!spaceUsageAnalyzeRequest.isQueryPublic()) {
+            //若查询公共图库，则查询space == null的图片
+            if (spaceUsageAnalyzeRequest.isQueryPublic()) {
                 queryWrapper.isNull("spaceId");
+            }
+            //若查询全相册，则查询space != null的图片
+            if (spaceUsageAnalyzeRequest.isQueryAll()) {
+                queryWrapper.isNotNull("spaceId");
             }
             List<Object> pictureObjList = pictureService.getBaseMapper().selectObjs(queryWrapper);
             long usedSize = pictureObjList.stream().mapToLong(result -> result instanceof Long ? (Long) result : 0).sum();
@@ -142,13 +148,13 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
     }
 
     @Override
-    public List<SpaceSizeAnalyzeResponse> getSpaceSizeAnalyze(SpaceSizeAnalyzeRequest spaceSizeAnalyzeRequests, User loginUser) {
+    public List<SpaceSizeAnalyzeResponse> getSpaceSizeAnalyze(SpaceSizeAnalyzeRequest spaceSizeAnalyzeRequest, User loginUser) {
         //检查权限
-        checkSpaceAnalyzeAuth(spaceSizeAnalyzeRequests, loginUser);
+        checkSpaceAnalyzeAuth(spaceSizeAnalyzeRequest, loginUser);
         //构造查询条件
         QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
         //根据分析范围补充查询条件
-        fillAnalyzeQueryWrapper(spaceSizeAnalyzeRequests, queryWrapper);
+        fillAnalyzeQueryWrapper(spaceSizeAnalyzeRequest, queryWrapper);
         //查询所有符合条件的图片大小
         queryWrapper.select("picSize");
         List<Long> picSizes =
@@ -199,7 +205,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
     @Override
     public List<Space> getSpaceRankAnalyze(SpaceRankAnalyzeRequest spaceRankAnalyzeRequest, User loginUser) {
         ThrowUtils.throwIf(spaceRankAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
-        // 仅管理员可查看空间排行
+        //仅管理员可查看相册排行
         ThrowUtils.throwIf(!userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "没有权限查看相册使用量排行");
         //构造查询条件
         QueryWrapper<Space> queryWrapper = new QueryWrapper<>();

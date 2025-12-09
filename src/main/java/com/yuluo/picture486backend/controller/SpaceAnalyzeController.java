@@ -73,7 +73,7 @@ public class SpaceAnalyzeController {
     }
 
     @PostMapping("/user")
-    @Operation(summary = "分析用户在不同时间范围内的上传情况")
+    @Operation(summary = "分析用户在不同时间范围内的上传情况，用于全相册分析与公共图库分析")
     public BaseResponse<List<SpaceUserAnalyzeResponse>> getSpaceUserAnalyze(@RequestBody SpaceUserAnalyzeRequest spaceUserAnalyzeRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceUserAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);

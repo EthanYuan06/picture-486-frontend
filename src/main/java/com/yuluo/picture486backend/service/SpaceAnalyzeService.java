@@ -7,6 +7,7 @@ import com.yuluo.picture486backend.model.vo.space.analyze.*;
 
 import java.util.List;
 
+
 public interface SpaceAnalyzeService {
     /**
      * 获取相册使用情况分析
