@@ -39,5 +39,10 @@ public class SpaceUsageAnalyzeResponse implements Serializable {
      */
     private Double countUsageRatio;
 
+    /**
+     * 待审核图片数量
+     */
+    private Long pendingCount;
+
     private static final long serialVersionUID = 1L;
 }

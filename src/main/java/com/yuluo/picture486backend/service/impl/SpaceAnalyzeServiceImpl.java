@@ -11,6 +11,7 @@ import com.yuluo.picture486backend.model.dto.space.analyze.*;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486backend.model.enums.PictureReviewStatusEnum;
 import com.yuluo.picture486backend.model.vo.space.analyze.*;
 import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.service.SpaceAnalyzeService;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
@@ -57,6 +59,18 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
             if (spaceUsageAnalyzeRequest.isQueryAll()) {
                 queryWrapper.isNotNull("spaceId");
             }
+
+            //构建用于统计待审核图片数量的查询条件
+            QueryWrapper<Picture> pendingQuerywrapper = new QueryWrapper<>();
+            if (spaceUsageAnalyzeRequest.isQueryPublic()) {
+                pendingQuerywrapper.isNull("spaceId");
+            }
+            if (spaceUsageAnalyzeRequest.isQueryAll()) {
+                pendingQuerywrapper.isNotNull("spaceId");
+            }
+            pendingQuerywrapper.eq("reviewStatus", PictureReviewStatusEnum.REVIEWING.getValue());
+            long pendingCount = pictureService.getBaseMapper().selectCount(pendingQuerywrapper);
+
             List<Object> pictureObjList = pictureService.getBaseMapper().selectObjs(queryWrapper);
             long usedSize = pictureObjList.stream().mapToLong(result -> result instanceof Long ? (Long) result : 0).sum();
             long usedCount = pictureObjList.size();
@@ -64,11 +78,13 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
             SpaceUsageAnalyzeResponse spaceUsageAnalyzeResponse = new SpaceUsageAnalyzeResponse();
             spaceUsageAnalyzeResponse.setUsedSize(usedSize);
             spaceUsageAnalyzeResponse.setUsedCount(usedCount);
-            //公共图库无上限、无比例，不作设置
+            //公共图库无上限、无比例，不作设置，但设置待审核图片数量
+            spaceUsageAnalyzeResponse.setPendingCount(pendingCount);
             spaceUsageAnalyzeResponse.setMaxSize(null);
             spaceUsageAnalyzeResponse.setMaxCount(null);
             spaceUsageAnalyzeResponse.setSizeUsageRatio(null);
             spaceUsageAnalyzeResponse.setCountUsageRatio(null);
+
             return spaceUsageAnalyzeResponse;
         } else {
             //查询指定相册
@@ -132,11 +148,19 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         List<String> tagsJsonList =
                 pictureService.getBaseMapper().selectMaps(queryWrapper)//根据tags字段查询所有数据
                 .stream().filter(ObjUtil::isNotNull)//只筛选tags不为null的数据
-                .map(Objects::toString)//对以上数据逐个转换为字符串，转换的结果是JSON字符串
+                .map(map -> map.get("tags") != null ? map.get("tags").toString() : null)
+                .filter(Objects::nonNull)
                 .toList();//处理结果以集合返回JSON字符串
         //合并所有标签并统计使用次数
         Map<String, Long> tagCountMap = tagsJsonList.stream()
-                .flatMap(tagsJson -> JSONUtil.toList(tagsJson, String.class).stream())//将多个流合并成一个流，扁平化处理
+                .flatMap(tagsJson -> {
+                    try {
+                        return JSONUtil.toList(tagsJson, String.class).stream();
+                    } catch (Exception e) {
+                        // 如果解析失败，返回空流
+                        return Stream.empty();
+                    }
+                })//将多个流合并成一个流，扁平化处理
                 .collect(Collectors.groupingBy(tag -> tag, Collectors.counting()));//按标签本身的内容分组（tag -> tag），统计每个标签出现的次数
         //转换为响应对象，按使用次数降序排序
         return tagCountMap.entrySet().stream()//entrySet()方法返回Map中所有键值对的集合视图
@@ -160,14 +184,14 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         List<Long> picSizes =
                 pictureService.getBaseMapper().selectMaps(queryWrapper)
                         .stream().filter(ObjUtil::isNotNull)
-                        .map(size ->((Number)size).longValue())
+                        .map(map -> ((Number) map.get("picSize")).longValue())
                         .toList();
         //定义分段范围，使用有序的Map
         Map<String, Long> sizeRanges = new TreeMap<>();
-        sizeRanges.put("< 1MB", picSizes.stream().filter(size -> size < 1024 * 1024).count());
-        sizeRanges.put("1MB-5MB", picSizes.stream().filter(size -> size >= 1024 * 1024 && size < 5 * 1024 * 1024).count());
-        sizeRanges.put("5MB-10MB", picSizes.stream().filter(size -> size >= 5 * 1024 * 1024 && size < 10 * 1024 * 1024).count());
-        sizeRanges.put("10MB-15MB", picSizes.stream().filter(size -> size >= 10 * 1024 * 1024 && size < 15 * 1024 * 1024).count());
+        sizeRanges.put("<1MB", picSizes.stream().filter(size -> size < 1024 * 1024).count());
+        sizeRanges.put("1MB~5MB", picSizes.stream().filter(size -> size >= 1024 * 1024 && size < 5 * 1024 * 1024).count());
+        sizeRanges.put("5MB~10MB", picSizes.stream().filter(size -> size >= 5 * 1024 * 1024 && size < 10 * 1024 * 1024).count());
+        sizeRanges.put("10MB~15MB", picSizes.stream().filter(size -> size >= 10 * 1024 * 1024 && size < 15 * 1024 * 1024).count());
 
         //转换为响应对象
         return sizeRanges.entrySet().stream().
@@ -187,12 +211,13 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         String timeDimension = spaceUserAnalyzeRequest.getTimeDimension();
         switch (timeDimension) {
             case "day" -> queryWrapper.select("date_format(createTime, '%Y-%m-%d') as period", "count(*) as count");
-            case "week" -> queryWrapper.select("yearweek(createTime) as period", "count(*) as count");
+            case "week" -> queryWrapper.select("yearweek(createTime,3) as period", "count(*) as count");
             case "month" -> queryWrapper.select("date_format(createTime, '%Y-%m') as period", "count(*) as count");
             default -> throw new BusinessException(ErrorCode.PARAMS_ERROR, "时间维度不存在");
         }
         //分组和排序
         queryWrapper.groupBy("period").orderByAsc("period");
+
         //查询结果并转换
         return pictureService.getBaseMapper().selectMaps(queryWrapper)
                 .stream().map(result -> {
@@ -242,8 +267,9 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
      * @param queryWrapper 查询条件
      */
     private static void fillAnalyzeQueryWrapper(SpaceAnalyzeRequest spaceAnalyzeRequest, QueryWrapper<Picture> queryWrapper){
-        //如果查询所有的相册，不拼接条件，返回
+        //如果查询所有的相册，拼接不为空的spaceId，返回
         if (spaceAnalyzeRequest.isQueryAll()){
+            queryWrapper.isNotNull("spaceId");
             return;
         }
         //如果查询公共图库，拼接spaceId = null，返回
