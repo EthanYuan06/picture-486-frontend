@@ -267,7 +267,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
      * @param queryWrapper 查询条件
      */
     private static void fillAnalyzeQueryWrapper(SpaceAnalyzeRequest spaceAnalyzeRequest, QueryWrapper<Picture> queryWrapper){
-        //如果查询所有的相册，拼接不为空的spaceId，返回
+        //如果查询所有的相册，拼接不为空的spaceId，用于正确返回所有存在相册的图片，返回
         if (spaceAnalyzeRequest.isQueryAll()){
             queryWrapper.isNotNull("spaceId");
             return;
