@@ -188,11 +188,11 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
                         .toList();
         //定义分段范围，使用有序的Map
         Map<String, Long> sizeRanges = new TreeMap<>();
-        sizeRanges.put("<1MB", picSizes.stream().filter(size -> size < 1024 * 1024).count());
-        sizeRanges.put("1MB~5MB", picSizes.stream().filter(size -> size >= 1024 * 1024 && size < 5 * 1024 * 1024).count());
-        sizeRanges.put("5MB~10MB", picSizes.stream().filter(size -> size >= 5 * 1024 * 1024 && size < 10 * 1024 * 1024).count());
-        sizeRanges.put("10MB~15MB", picSizes.stream().filter(size -> size >= 10 * 1024 * 1024 && size < 15 * 1024 * 1024).count());
-
+        sizeRanges.put("<2MB", picSizes.stream().filter(size -> size < 1024 * 1024).count());
+        sizeRanges.put("2MB~4MB", picSizes.stream().filter(size -> size >= 1024 * 1024 && size < 1024 * 1024 * 4).count());
+        sizeRanges.put("4MB~6MB", picSizes.stream().filter(size -> size >= 1024 * 1024 * 4 && size < 1024 * 1024 * 6).count());
+        sizeRanges.put("6MB~8MB", picSizes.stream().filter(size -> size >= 1024 * 1024 * 6 && size < 1024 * 1024 * 8).count());
+        sizeRanges.put("8MB~10MB", picSizes.stream().filter(size -> size >= 1024 * 1024 * 8 && size < 1024 * 1024 * 10).count());
         //转换为响应对象
         return sizeRanges.entrySet().stream().
                 map(entry -> new SpaceSizeAnalyzeResponse(entry.getKey(), entry.getValue()))
