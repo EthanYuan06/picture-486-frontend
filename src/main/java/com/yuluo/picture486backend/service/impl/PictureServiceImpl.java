@@ -198,11 +198,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Date createTimeEnd = pictureQueryRequest.getCreateTimeEnd();
         Date editTimeStart = pictureQueryRequest.getEditTimeStart();
         Date editTimeEnd = pictureQueryRequest.getEditTimeEnd();
-
-//        String createTimeStart = pictureQueryRequest.getCreateTimeStart();
-//        String createTimeEnd = pictureQueryRequest.getCreateTimeEnd();
-//        String editTimeStart = pictureQueryRequest.getEditTimeStart();
-//        String editTimeEnd = pictureQueryRequest.getEditTimeEnd();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
 
@@ -339,6 +334,42 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         updatePicture.setReviewTime(new Date());
         boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "操作失败");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void doPictureReviewByBatch(PictureReviewByBatchRequest pictureReviewByBatchRequest, User loginUser) {
+        //1.校验参数
+        List<Long> idList = pictureReviewByBatchRequest.getIdList();
+        Integer reviewStatus = pictureReviewByBatchRequest.getReviewStatus();
+        String reviewMessage = pictureReviewByBatchRequest.getReviewMessage();
+        if (CollUtil.isEmpty(idList) || reviewStatus == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        // 校验审核状态是否合法
+        PictureReviewStatusEnum reviewStatusEnum = PictureReviewStatusEnum.getEnumByValue(reviewStatus);
+        if (reviewStatusEnum == null || PictureReviewStatusEnum.REVIEWING.equals(reviewStatusEnum)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "审核状态不合法");
+        }
+        //2.批量判断图片是否存在
+        List<Picture> oldPictureList = this.listByIds(idList);
+        ThrowUtils.throwIf(oldPictureList.size() != idList.size(), ErrorCode.NOT_FOUND_ERROR, "当前选中图片存在不合法的数据");
+        //3.批量判断图片是否重复审核，该操作通过筛选目标审核参数与当前审核参数不同的图片对象，保留了未重复审核的图片
+        List<Picture> reviewPictureList = oldPictureList.stream().
+                filter(picture -> !picture.getReviewStatus().equals(reviewStatus)).toList();
+        ThrowUtils.throwIf(reviewPictureList.isEmpty(), ErrorCode.OPERATION_ERROR, "当前选中图片均重复审核");
+        //4.批量操作数据库更新审核状态
+        List<Picture> updatePictureList = reviewPictureList.stream().map(picture -> {
+            Picture updatePicture = new Picture();
+            updatePicture.setId(picture.getId());
+            updatePicture.setReviewStatus(reviewStatus);
+            updatePicture.setReviewerId(loginUser.getId());
+            updatePicture.setReviewMessage(reviewMessage);
+            updatePicture.setReviewTime(new Date());
+            return updatePicture;
+        }).toList();
+        boolean result = this.updateBatchById(updatePictureList);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量审核失败");
     }
 
     @Override

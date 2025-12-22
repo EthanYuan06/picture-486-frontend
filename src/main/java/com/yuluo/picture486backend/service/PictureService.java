@@ -66,6 +66,13 @@ public interface PictureService extends IService<Picture> {
      */
     void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser);
 
+    /**
+     * 批量图片审核
+     *
+     * @param pictureReviewByBatchRequest 图片批量审核请求
+     * @param loginUser                   登录用户
+     */
+    void doPictureReviewByBatch(PictureReviewByBatchRequest pictureReviewByBatchRequest, User loginUser);
 
     /**
      * 填充图片审核参数
@@ -140,24 +147,6 @@ public interface PictureService extends IService<Picture> {
      * @return 图片ID列表
      */
     List<Long> getPictureIds(Long spaceId);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
