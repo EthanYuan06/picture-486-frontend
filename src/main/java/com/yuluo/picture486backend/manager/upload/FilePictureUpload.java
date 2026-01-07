@@ -25,7 +25,7 @@ public class FilePictureUpload extends PictureUploadTemplate{
         long fileSize = multipartFile.getSize();
         //定义常量：1MB
         final long ONE_MB = 1024 * 1024;
-        ThrowUtils.throwIf(fileSize > 10 * ONE_MB, ErrorCode.PARAMS_ERROR, "上传文件大小不能超过10MB");
+        ThrowUtils.throwIf(fileSize > 15 * ONE_MB, ErrorCode.PARAMS_ERROR, "上传文件大小不能超过15MB");
         //获取文件后缀
         String fileSuffix = FileUtil.getSuffix(multipartFile.getOriginalFilename());
         //定义常量：允许的图片格式

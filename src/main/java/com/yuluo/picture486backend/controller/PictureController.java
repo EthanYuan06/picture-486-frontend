@@ -272,7 +272,7 @@ public class PictureController {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         // 参数校验
         ThrowUtils.throwIf(multipartFiles == null || multipartFiles.length == 0, ErrorCode.PARAMS_ERROR, "未选择任何文件");
-        ThrowUtils.throwIf(multipartFiles.length > 20, ErrorCode.PARAMS_ERROR, "单次上传文件数量不能超过20个");
+        ThrowUtils.throwIf(multipartFiles.length > 10, ErrorCode.PARAMS_ERROR, "单次上传文件数量不能超过10个");
         //格式校验，只上传符合后缀要求的图片
         MultipartFile[] AllowedMultipartFiles = PictureUtil.filterAllowedImages(multipartFiles);
         log.info("实际上传图片数量：{}", AllowedMultipartFiles.length);
