@@ -12,5 +12,5 @@ public interface SpaceConstant {
     /**
      * 默认相册封面
      */
-    String DEFAULT_SPACE_COVER = "https://yuluo-picture-1383397986.cos.ap-guangzhou.myqcloud.com/Album_default_cover/default_cover.webp";
+    String DEFAULT_SPACE_COVER = "https://yuluo-picture-1383397986.cos.ap-guangzhou.myqcloud.com/Album_default_cover/default_album.webp";
 }

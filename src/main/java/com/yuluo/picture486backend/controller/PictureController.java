@@ -201,7 +201,7 @@ public class PictureController {
             User loginUser = userService.getLoginUser(request);
             Space space = spaceService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
-            if (!space.getUserId().equals(loginUser.getId())){
+            if (!space.getUserId().equals(loginUser.getId()) && !loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE)){
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限操作该相册");
             }
         }
