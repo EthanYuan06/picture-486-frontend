@@ -173,6 +173,8 @@ public class UserController {
     public BaseResponse<Boolean> uploadAvatar(@RequestPart("file") MultipartFile file, HttpServletRequest request, @RequestParam("id") Long id) {
         // 获取登录用户
         User loginUser = userService.getLoginUser(request);
+        // 校验头像文件是否超过限制：大小不超过1MB
+        ThrowUtils.throwIf(file.getSize() > 1024 * 1024, ErrorCode.PARAMS_ERROR, "头像文件不符合要求");
         if (loginUser.getUserRole().equals(UserConstant.DEFAULT_ROLE)) {
             // 构建上传路径前缀，指定存储桶中的存储路径为 avatar 目录
             String uploadPathPrefix = String.format("avatar/%s", loginUser.getId());
@@ -190,7 +192,7 @@ public class UserController {
             String uploadPathPrefix = String.format("avatar/%s", id);
             // 使用文件上传处理器
             PictureUploadResult uploadResult = filePictureUpload.uploadPicture(file, uploadPathPrefix);
-            // 更新用户头像
+            // 只更新用户头像URL字段
             User updateUser = new User();
             updateUser.setId(id);
             updateUser.setUserAvatar(uploadResult.getUrl());
