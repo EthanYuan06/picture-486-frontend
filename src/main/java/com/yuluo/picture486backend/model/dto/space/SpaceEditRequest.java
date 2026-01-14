@@ -16,9 +16,19 @@ public class SpaceEditRequest implements Serializable {
     private Long id;
 
     /**
+     * 相册封面
+     */
+    private String spaceCover;
+
+    /**
      * 空间名称
      */
     private String spaceName;
+    
+    /**
+     * 相册简介
+     */
+    private String spaceDesc;
 
     private static final long serialVersionUID = 1L;
 }

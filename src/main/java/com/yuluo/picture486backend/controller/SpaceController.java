@@ -88,7 +88,7 @@ public class SpaceController {
     @PostMapping("/update")
     @Operation(summary = "【管理员】更新相册")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updateSpace(@RequestBody SpaceUpdateRequest spaceUpdateRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> updateSpace(@RequestBody SpaceUpdateRequest spaceUpdateRequest) {
         if (spaceUpdateRequest == null || spaceUpdateRequest.getId() <= 0){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -187,6 +187,7 @@ public class SpaceController {
 
     @GetMapping("/list/level")
     @Operation(summary = "获取相册等级列表")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<List<SpaceLevel>> listSpaceLevel() {
         List<SpaceLevel> spaceLevelList = Arrays.stream(SpaceLevelEnum.values()) // 获取所有枚举
                 .map(spaceLevelEnum -> new SpaceLevel(

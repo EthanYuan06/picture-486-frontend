@@ -193,6 +193,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         sizeRanges.put("4MB~6MB", picSizes.stream().filter(size -> size >= 1024 * 1024 * 4 && size < 1024 * 1024 * 6).count());
         sizeRanges.put("6MB~8MB", picSizes.stream().filter(size -> size >= 1024 * 1024 * 6 && size < 1024 * 1024 * 8).count());
         sizeRanges.put("8MB~10MB", picSizes.stream().filter(size -> size >= 1024 * 1024 * 8 && size < 1024 * 1024 * 10).count());
+        sizeRanges.put(">10MB", picSizes.stream().filter(size -> size >= 1024 * 1024 * 10).count());
         //转换为响应对象
         return sizeRanges.entrySet().stream().
                 map(entry -> new SpaceSizeAnalyzeResponse(entry.getKey(), entry.getValue()))

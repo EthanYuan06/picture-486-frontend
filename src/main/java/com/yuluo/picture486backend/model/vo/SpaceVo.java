@@ -15,37 +15,42 @@ public class SpaceVo implements Serializable {
     private Long id;
 
     /**
-     * 空间名称
+     * 相册名称
      */
     private String spaceName;
+    
+    /**
+     * 相册简介
+     */
+    private String spaceDesc;
 
     /**
-     * 空间封面
+     * 相册封面
      */
     private String spaceCover;
 
     /**
-     * 空间级别：0-普通版 1-专业版 2-旗舰版
+     * 相册级别：0-普通版 1-专业版 2-旗舰版
      */
     private Integer spaceLevel;
 
     /**
-     * 空间图片的最大总大小
+     * 相册图片的最大总大小
      */
     private Long maxSize;
 
     /**
-     * 空间图片的最大数量
+     * 相册图片的最大数量
      */
     private Long maxCount;
 
     /**
-     * 当前空间下图片的总大小
+     * 当前相册下图片的总大小
      */
     private Long totalSize;
 
     /**
-     * 当前空间下的图片数量
+     * 当前相册下的图片数量
      */
     private Long totalCount;
 
