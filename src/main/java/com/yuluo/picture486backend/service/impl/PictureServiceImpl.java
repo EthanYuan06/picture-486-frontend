@@ -116,7 +116,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         }
             //上传图片
-            //按照用户id划分目录（公共相册）；按照相册id划分目录（私有相册）
+            //划分公共图库和私有相册
             String uploadPathPrefix;
             if (spaceId != null){
                 uploadPathPrefix = String.format("space/%s", spaceId);

@@ -8,7 +8,7 @@ import java.io.Serializable;
 public class PictureUploadRequest implements Serializable {
   
     /**  
-     * 图片 id（用于修改）  
+     * 图片 id
      */  
     private Long id;
 

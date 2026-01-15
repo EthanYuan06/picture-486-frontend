@@ -1,6 +1,7 @@
 package com.yuluo.picture486backend.model.vo;
 
 import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.yuluo.picture486backend.model.entity.Picture;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
@@ -84,18 +85,18 @@ public class PictureVo implements Serializable {
 
     /**  
      * 创建时间  
-     */  
+     */
     private Date createTime;
   
     /**  
      * 编辑时间  
-     */  
-    private Date editTime;  
+     */
+    private Date editTime;
   
     /**  
      * 更新时间  
-     */  
-    private Date updateTime;  
+     */
+    private Date updateTime;
   
     /**  
      * 创建用户信息  
