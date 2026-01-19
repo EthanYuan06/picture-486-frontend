@@ -1,5 +1,6 @@
 package com.yuluo.picture486backend.controller;
 
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -35,8 +36,11 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -203,7 +207,7 @@ public class PictureController {
         String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
         if (cachedValue != null) {
             // 缓存命中，返回结果
-            Page<Picture> result = JSONUtil.toBean(cachedValue, Page.class);
+            Page<Picture> result = convertJsonToPicturePage(cachedValue);
             return ResultUtils.success(result);
         }
         
@@ -212,7 +216,7 @@ public class PictureController {
         cachedValue = valueOps.get(cacheKey);
         if (cachedValue != null) {
             // 缓存命中，返回结果
-            Page<Picture> result = JSONUtil.toBean(cachedValue, Page.class);
+            Page<Picture> result = convertJsonToPicturePage(cachedValue);
             LOCAL_CACHE.put(cacheKey, cachedValue);
             return ResultUtils.success(result);
         }
@@ -257,13 +261,13 @@ public class PictureController {
         // 构建缓存key
         String queryConditionStr = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryConditionStr.getBytes());
-        String cacheKey = "listPage:" + hashKey;
+        String cacheKey = "listPageVo:" + hashKey;
 
         // 查询本地缓存
         String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
         if (cachedValue != null) {
-            // 缓存命中，返回结果
-            Page<Picture> result = JSONUtil.toBean(cachedValue, Page.class);
+            // 缓存命中，进行反序列化处理后返回结果
+            Page<Picture> result = convertJsonToPicturePage(cachedValue);
             return ResultUtils.success(pictureService.getPictureVoPage(result, request));
         }
 
@@ -272,7 +276,7 @@ public class PictureController {
         cachedValue = valueOps.get(cacheKey);
         if (cachedValue != null) {
             // 缓存命中，返回结果
-            Page<Picture> result = JSONUtil.toBean(cachedValue, Page.class);
+            Page<Picture> result = convertJsonToPicturePage(cachedValue);
             LOCAL_CACHE.put(cacheKey, cachedValue);
             return ResultUtils.success(pictureService.getPictureVoPage(result, request));
         }
@@ -288,6 +292,34 @@ public class PictureController {
         // 更新Redis缓存，设置过期时间5分钟
         valueOps.set(cacheKey, cacheValue, 5, TimeUnit.MINUTES);
         return ResultUtils.success(pictureService.getPictureVoPage(result, request));
+    }
+
+    /**
+     * 缓存类型转换处理
+     * @param cachedValue 缓存中的数据
+     * @return Page<Picture> 对象
+     */
+    private static Page<Picture> convertJsonToPicturePage(String cachedValue) {
+        Page<?> tempResult = JSONUtil.toBean(cachedValue, Page.class);
+        // 创建一个新的Page<Picture>实例
+        Page<Picture> result = new Page<>();
+        result.setCurrent(tempResult.getCurrent());//设置当前页码
+        result.setSize(tempResult.getSize());//设置每页记录数
+        result.setTotal(tempResult.getTotal());//设置总记录数
+
+        // 处理records列表中的JSONObject对象
+        List<Picture> pictureRecords = new ArrayList<>();
+        for (Object obj : tempResult.getRecords()) {
+            if (obj instanceof JSONObject jsonObj) {
+                //
+                Picture picture = jsonObj.toBean(Picture.class);
+                pictureRecords.add(picture);
+            } else if (obj instanceof Picture) {
+                pictureRecords.add((Picture) obj);
+            }
+        }
+        result.setRecords(pictureRecords);
+        return result;
     }
 
 
