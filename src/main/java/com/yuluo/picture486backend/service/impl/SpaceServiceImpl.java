@@ -17,6 +17,7 @@ import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
+import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
 import com.yuluo.picture486backend.model.vo.PictureVo;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
 import com.yuluo.picture486backend.model.vo.UserVo;
@@ -58,12 +59,15 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         //dto转实体类
         Space space = new Space();
         BeanUtils.copyProperties(spaceAddRequest, space);
-        //设置默认相册名称与等级
+        //设置默认相册名称、等级以及相册类型
         if (StrUtil.isBlank(spaceAddRequest.getSpaceName())){
             space.setSpaceName(SpaceConstant.DEFAULT_SPACE_NAME);
         }
         if (spaceAddRequest.getSpaceLevel() == null){
             space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+        }
+        if (spaceAddRequest.getSpaceType() == null){
+            space.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
         }
         //设置默认限额与封面
         this.fillSpaceBySpaceLevel(space);
@@ -77,7 +81,6 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
         //设置用户ID
         space.setUserId(userId);
-        //限制同一用户仅允许创建5个相册，使用Redisson分布式锁 + 事务防止并发重复创建
         String lockKey = "lock:space:create:" + userId;
         RLock lock = redissonClient.getLock(lockKey);
         try{
@@ -85,17 +88,30 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             if (!locked) {
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "操作频繁，请稍后再试");
             }
+            // 在获取锁后进行数量校验，确保校验和创建操作的原子性
+            if (!userService.isAdmin(loginUser) && space.getSpaceType().equals(SpaceTypeEnum.PRIVATE.getValue())) {
+                // 统计普通用户的私人相册数量
+                long userSpaceCount = this.lambdaQuery()
+                        .eq(Space::getUserId, userId)
+                        .eq(Space::getSpaceType, SpaceTypeEnum.PRIVATE.getValue())
+                        .count();
+                // 若创建则抛出异常
+                if (userSpaceCount >= 5) {
+                    throw new BusinessException(ErrorCode.OPERATION_ERROR, "仅允许创建5个私人相册");
+                }
+            }
+            // 检查是否已存在团队相册
+            if (space.getSpaceType().equals(SpaceTypeEnum.TEAM.getValue())) {
+                boolean exists = this.lambdaQuery()
+                        .eq(Space::getUserId, userId)
+                        .eq(Space::getSpaceType, SpaceTypeEnum.TEAM.getValue())
+                        .exists();
+                // 一个用户只能创建一个多人相册
+                ThrowUtils.throwIf(exists, ErrorCode.OPERATION_ERROR, "只能创建一个多人相册");
+            }
             //事务执行：先查后插，保证原子性
             //创建相册：管理员可无限创建相册，用户最多创建 5 个相册
             Long spaceId = transactionTemplate.execute(status -> {
-                if (!userService.isAdmin(loginUser)) {
-                    //统计用户的相册数量
-                    long userSpaceCount = this.lambdaQuery().eq(Space::getUserId, userId).count();
-                    //若创建则抛出异常
-                    if (userSpaceCount >= 5) {
-                        throw new BusinessException(ErrorCode.OPERATION_ERROR, "当前普通用户仅允许拥有5个相册");
-                    }
-                }
                 //保存相册
                 boolean saved = this.save(space);
                 if (!saved) {
@@ -122,6 +138,8 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         String spaceName = space.getSpaceName();
         Integer spaceLevel = space.getSpaceLevel();
         SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
+        Integer spaceType = space.getSpaceType();
+        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
         //判断是否是创建相册
         if (isAdd) {
             if (StrUtil.isBlank(spaceName)) {
@@ -130,6 +148,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             if (spaceLevel == null) {
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册等级不能为空");
             }
+            if(spaceType == null){
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册类型不能为空");
+            }
         }
         //修改数据时，更改相册级别时的判定
         if (spaceLevel != null && spaceLevelEnum == null) {
@@ -137,6 +158,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
         if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 24) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册名称过长");
+        }
+        if(spaceType != null && spaceTypeEnum == null){
+            //随意输入一个数字绕过spaceType != null也不能绕过spaceTypeEnum == null的结果
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册类型不存在");
         }
     }
 
@@ -152,6 +177,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         Long userId = spaceQueryRequest.getUserId();
         String spaceName = spaceQueryRequest.getSpaceName();
         Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
+        Integer spaceType = spaceQueryRequest.getSpaceType();
         String sortField = spaceQueryRequest.getSortField();
         String sortOrder = spaceQueryRequest.getSortOrder();
 
@@ -159,10 +185,11 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
         queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel), "spaceLevel", spaceLevel);
+        queryWrapper.eq(ObjUtil.isNotEmpty(spaceType), "spaceType", spaceType);
         queryWrapper.like(StrUtil.isNotBlank(spaceName), "spaceName", spaceName);
         
         //排序
-        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("asc"), sortField);
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
         return queryWrapper;
     }
 

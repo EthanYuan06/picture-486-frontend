@@ -29,6 +29,11 @@ public class Space implements Serializable {
     private String spaceDesc;
 
     /**
+     * 相册类型：0-私有 1-多人
+     */
+    private Integer spaceType;
+
+    /**
      * 相册封面
      */
     private String spaceCover;

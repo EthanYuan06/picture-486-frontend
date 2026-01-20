@@ -20,5 +20,10 @@ public class SpaceAddRequest implements Serializable {
      */
     private Integer spaceLevel;
 
+    /**
+     * 相册类型：0-私有 1-多人
+     */
+    private Integer spaceType;
+
     private static final long serialVersionUID = 1L;
 }
