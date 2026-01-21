@@ -15,14 +15,17 @@ import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
 import com.yuluo.picture486backend.model.dto.space.SpaceQueryRequest;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
+import com.yuluo.picture486backend.model.entity.SpaceUser;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
+import com.yuluo.picture486backend.model.enums.SpaceRoleEnum;
 import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
 import com.yuluo.picture486backend.model.vo.PictureVo;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
 import com.yuluo.picture486backend.model.vo.UserVo;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.mapper.SpaceMapper;
+import com.yuluo.picture486backend.service.SpaceUserService;
 import com.yuluo.picture486backend.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,6 +50,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private SpaceUserService spaceUserService;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -116,6 +122,15 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 boolean saved = this.save(space);
                 if (!saved) {
                     throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建相册失败");
+                }
+                //如果是多人相册，关联新增团队成员记录
+                if (SpaceTypeEnum.TEAM.getValue() == spaceAddRequest.getSpaceType()) {
+                    SpaceUser spaceUser = new SpaceUser();
+                    spaceUser.setSpaceId(space.getId());
+                    spaceUser.setUserId(userId);
+                    spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
+                    boolean result = spaceUserService.save(spaceUser);
+                    ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
                 return space.getId();
             });
