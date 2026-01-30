@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
+import com.yuluo.picture486backend.manager.auth.StpKit;
 import com.yuluo.picture486backend.model.dto.user.UserQueryRequest;
 import com.yuluo.picture486backend.model.dto.user.UserRegisterRequest;
 import com.yuluo.picture486backend.model.entity.User;
@@ -160,6 +161,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         //4.记录用户登录态
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        //5.记录用户登录态到Sa-Token中，便于多人相册鉴权
+        StpKit.SPACE.login(user.getId());//同时登录Space体系的账号（分为User体系用于整个项目，和Space体系用于多人相册）
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);//记录Space体系的登录态
         return this.getLoginUserVo(user);
     }
 
