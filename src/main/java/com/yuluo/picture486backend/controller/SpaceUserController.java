@@ -7,6 +7,8 @@ import com.yuluo.picture486backend.common.ResultUtils;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.manager.auth.annotation.SaSpaceCheckPermission;
+import com.yuluo.picture486backend.manager.auth.model.SpaceUserPermissionConstant;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserAddRequest;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserEditRequest;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserQueryRequest;
@@ -40,6 +42,7 @@ public class SpaceUserController {
 
     @PostMapping("/add")
     @Operation(summary = "添加成员到相册")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public BaseResponse<Long> addSpaceUser(@RequestBody SpaceUserAddRequest spaceUserAddRequest) {
         ThrowUtils.throwIf(spaceUserAddRequest == null, ErrorCode.PARAMS_ERROR);
         long id = spaceUserService.addSpaceUser(spaceUserAddRequest);
@@ -48,6 +51,7 @@ public class SpaceUserController {
 
     @PostMapping("/delete")
     @Operation(summary = "从相册中移除成员")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public BaseResponse<Boolean> deleteSpaceUser(@RequestBody DeleteRequest deleteRequest) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -64,6 +68,7 @@ public class SpaceUserController {
 
     @PostMapping("/get")
     @Operation(summary = "查询某个成员在某个相册中的信息")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public BaseResponse<SpaceUser> getSpaceUser(@RequestBody SpaceUserQueryRequest spaceUserQueryRequest) {
         ThrowUtils.throwIf(spaceUserQueryRequest == null, ErrorCode.PARAMS_ERROR);
         Long spaceId = spaceUserQueryRequest.getSpaceId();
@@ -77,6 +82,7 @@ public class SpaceUserController {
 
     @PostMapping("/list")
     @Operation(summary = "查询相册成员列表")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public BaseResponse<List<SpaceUserVo>> listSpaceUser(@RequestBody SpaceUserQueryRequest spaceUserQueryRequest) {
         ThrowUtils.throwIf(spaceUserQueryRequest == null, ErrorCode.PARAMS_ERROR);
         List<SpaceUser> spaceUserList = spaceUserService.list(spaceUserService.getQueryWrapper(spaceUserQueryRequest));
@@ -85,6 +91,7 @@ public class SpaceUserController {
 
     @PostMapping("/edit")
     @Operation(summary = "编辑成员信息")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.SPACE_USER_MANAGE)
     public BaseResponse<Boolean> editSpaceUser(@RequestBody SpaceUserEditRequest spaceUserEditRequest) {
         if (spaceUserEditRequest == null || spaceUserEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -102,7 +109,7 @@ public class SpaceUserController {
         return ResultUtils.success(true);
     }
     
-    @RequestMapping("/list/me")
+    @PostMapping("/list/me")
     @Operation(summary = "查询我加入的团队空间列表（所有已登录用户）")
     public BaseResponse<List<SpaceUserVo>> listMyTeamSpace(HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);

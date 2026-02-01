@@ -13,6 +13,10 @@ import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.manager.auth.SpaceUserAuthManager;
+import com.yuluo.picture486backend.manager.auth.StpKit;
+import com.yuluo.picture486backend.manager.auth.annotation.SaSpaceCheckPermission;
+import com.yuluo.picture486backend.manager.auth.model.SpaceUserPermissionConstant;
 import com.yuluo.picture486backend.manager.upload.FilePictureUpload;
 import com.yuluo.picture486backend.model.dto.picture.*;
 import com.yuluo.picture486backend.model.entity.Picture;
@@ -31,6 +35,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
@@ -65,8 +70,12 @@ public class PictureController {
     @Resource
     private FilePictureUpload filePictureUpload;
 
+    @Resource
+    private SpaceUserAuthManager spaceUserAuthManager;
+
     @PostMapping("/upload")
     @Operation(summary = "上传图片")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<PictureVo> uploadPicture(
             @RequestPart("file") MultipartFile multipartFile,
             PictureUploadRequest pictureUploadRequest,
@@ -85,6 +94,7 @@ public class PictureController {
 
     @PostMapping("/upload/cover")
     @Operation(summary = "上传相册封面")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<Boolean> uploadCover(@RequestPart("file") MultipartFile file, HttpServletRequest request, @RequestParam("id") Long id) {
         // 获取登录用户
         User loginUser = userService.getLoginUser(request);
@@ -113,6 +123,7 @@ public class PictureController {
 
     @PostMapping("/delete")
     @Operation(summary = "删除图片")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         long pictureId = deleteRequest.getId();
@@ -173,11 +184,22 @@ public class PictureController {
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
         //相册权限校验
         Long spaceId = picture.getSpaceId();
+        Space space = null;
         if (spaceId != null){
-            User loginUser = userService.getLoginUser(request);
-            pictureService.checkPictureAuth(loginUser, picture);
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
+            space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
+//            User loginUser = userService.getLoginUser(request);
+            //已使用注解鉴权
+//            pictureService.checkPictureAuth(loginUser, picture);
         }
-        return ResultUtils.success(pictureService.getPictureVo(picture, request));
+        User loginUser = userService.getLoginUser(request);
+        PictureVo pictureVo = pictureService.getPictureVo(picture, request);
+        //获取权限列表
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        pictureVo.setPermissionList(permissionList);
+        return ResultUtils.success(pictureVo);
     }
 
 
@@ -250,13 +272,15 @@ public class PictureController {
             pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
             pictureQueryRequest.setNullSpaceId(true);
         }else {
-            //私有相册
-            User loginUser = userService.getLoginUser(request);
-            Space space = spaceService.getById(spaceId);
-            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
-            if (!space.getUserId().equals(loginUser.getId()) && !loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE)){
-                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限操作该相册");
-            }
+            boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
+            ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
+//            //私有相册
+//            User loginUser = userService.getLoginUser(request);
+//            Space space = spaceService.getById(spaceId);
+//            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
+//            if (!space.getUserId().equals(loginUser.getId()) && !loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE)){
+//                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限操作该相册");
+//            }
         }
         // 构建缓存key
         String queryConditionStr = JSONUtil.toJsonStr(pictureQueryRequest);
@@ -294,37 +318,12 @@ public class PictureController {
         return ResultUtils.success(pictureService.getPictureVoPage(result, request));
     }
 
-    /**
-     * 缓存类型转换处理
-     * @param cachedValue 缓存中的数据
-     * @return Page<Picture> 对象
-     */
-    private static Page<Picture> convertJsonToPicturePage(String cachedValue) {
-        Page<?> tempResult = JSONUtil.toBean(cachedValue, Page.class);
-        // 创建一个新的Page<Picture>实例
-        Page<Picture> result = new Page<>();
-        result.setCurrent(tempResult.getCurrent());//设置当前页码
-        result.setSize(tempResult.getSize());//设置每页记录数
-        result.setTotal(tempResult.getTotal());//设置总记录数
 
-        // 处理records列表中的JSONObject对象
-        List<Picture> pictureRecords = new ArrayList<>();
-        for (Object obj : tempResult.getRecords()) {
-            if (obj instanceof JSONObject jsonObj) {
-                //
-                Picture picture = jsonObj.toBean(Picture.class);
-                pictureRecords.add(picture);
-            } else if (obj instanceof Picture) {
-                pictureRecords.add((Picture) obj);
-            }
-        }
-        result.setRecords(pictureRecords);
-        return result;
-    }
 
 
     @PostMapping("/edit")
     @Operation(summary = "编辑图片")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPicture(@RequestBody PictureEditRequest pictureEditRequest, HttpServletRequest request) {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
@@ -365,6 +364,7 @@ public class PictureController {
 
     @PostMapping("/edit/batch")
     @Operation(summary = "批量编辑图片")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
@@ -377,6 +377,7 @@ public class PictureController {
 
     @PostMapping("/upload/batch")
     @Operation(summary = "批量上传图片")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<List<PictureVo>> uploadPictureByBatch(
             @RequestPart("file") MultipartFile[] multipartFiles,
             PictureUploadRequest pictureUploadRequest,
@@ -400,6 +401,7 @@ public class PictureController {
 
     @PostMapping("/delete/batch")
     @Operation(summary = "批量删除图片")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePictureByBatch(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         List<Long> PictureIds = deleteRequest.getIds();
@@ -425,6 +427,34 @@ public class PictureController {
         pictureTagCategory.setTagList(tagList);
         pictureTagCategory.setCategoryList(categoryList);
         return ResultUtils.success(pictureTagCategory);
+    }
+
+    /**
+     * 缓存类型转换处理
+     * @param cachedValue 缓存中的数据
+     * @return Page<Picture> 对象
+     */
+    private static Page<Picture> convertJsonToPicturePage(String cachedValue) {
+        Page<?> tempResult = JSONUtil.toBean(cachedValue, Page.class);
+        // 创建一个新的Page<Picture>实例
+        Page<Picture> result = new Page<>();
+        result.setCurrent(tempResult.getCurrent());//设置当前页码
+        result.setSize(tempResult.getSize());//设置每页记录数
+        result.setTotal(tempResult.getTotal());//设置总记录数
+
+        // 处理records列表中的JSONObject对象
+        List<Picture> pictureRecords = new ArrayList<>();
+        for (Object obj : tempResult.getRecords()) {
+            if (obj instanceof JSONObject jsonObj) {
+                //
+                Picture picture = jsonObj.toBean(Picture.class);
+                pictureRecords.add(picture);
+            } else if (obj instanceof Picture) {
+                pictureRecords.add((Picture) obj);
+            }
+        }
+        result.setRecords(pictureRecords);
+        return result;
     }
 
     private final Cache<String, String> LOCAL_CACHE =

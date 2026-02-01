@@ -456,8 +456,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //判断图片是否存在
         Picture oldPicture = this.getById(pictureId);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        //校验权限
-        checkPictureAuth(loginUser, oldPicture);
+        //已使用注解鉴权
+//        checkPictureAuth(loginUser, oldPicture);
         //开启事务
         Long spaceId = oldPicture.getSpaceId();
         transactionTemplate.execute(status -> {
@@ -496,8 +496,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long id = pictureEditRequest.getId();
         Picture oldPicture = this.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
-        //校验权限
-        checkPictureAuth(loginUser, oldPicture);
+        //已使用注解鉴权
+//        checkPictureAuth(loginUser, oldPicture);
         //补充审核参数
         this.fillReviewPictureParams(oldPicture, loginUser);
         //操作数据库

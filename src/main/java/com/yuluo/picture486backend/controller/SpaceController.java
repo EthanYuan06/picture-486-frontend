@@ -9,12 +9,12 @@ import com.yuluo.picture486backend.constant.UserConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486backend.model.dto.space.*;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
-import com.yuluo.picture486backend.model.vo.UserVo;
 import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.UserService;
@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
@@ -43,6 +44,8 @@ public class SpaceController {
 
     @Resource
     private PictureService pictureService;
+    @Autowired
+    private SpaceUserAuthManager spaceUserAuthManager;
 
 
     @PostMapping("/add")
@@ -112,7 +115,7 @@ public class SpaceController {
     @GetMapping("/get")
     @Operation(summary = "【管理员】根据id获取相册")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Space> getSpaceById(long id, HttpServletRequest request) {
+    public BaseResponse<Space> getSpaceById(long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         //查询数据库
         Space space = spaceService.getById(id);
@@ -127,7 +130,11 @@ public class SpaceController {
         //查询数据库
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-        return ResultUtils.success(spaceService.getSpaceVo(space, request));
+        User loginUser = userService.getLoginUser(request);
+        SpaceVo spaceVo = spaceService.getSpaceVo(space, request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        spaceVo.setPermissionList(permissionList);
+        return ResultUtils.success(spaceVo);
     }
 
     @PostMapping("/list/page")

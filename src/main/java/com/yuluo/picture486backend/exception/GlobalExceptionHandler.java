@@ -1,5 +1,7 @@
 package com.yuluo.picture486backend.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
 import com.yuluo.picture486backend.common.BaseResponse;
 import com.yuluo.picture486backend.common.ResultUtils;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -11,6 +13,18 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @Hidden
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(NotLoginException.class)
+    public BaseResponse<?> notLoginException(NotLoginException e) {
+        log.error("NotLoginException", e);
+        return ResultUtils.error(ErrorCode.NOT_LOGIN_ERROR, e.getMessage());
+    }
+
+    @ExceptionHandler(NotPermissionException.class)
+    public BaseResponse<?> notPermissionExceptionHandler(NotPermissionException e) {
+        log.error("NotPermissionException", e);
+        return ResultUtils.error(ErrorCode.NO_AUTH_ERROR, e.getMessage());
+    }
 
     @ExceptionHandler(BusinessException.class)
     public BaseResponse<?> businessExceptionHandler(BusinessException e) {
