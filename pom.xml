@@ -90,6 +90,7 @@
             <artifactId>hutool-all</artifactId>
             <version>5.8.32</version>
         </dependency>
+
         <!--knife4j-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
@@ -121,6 +122,13 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-pool2</artifactId>
+        </dependency>
+
+        <!-- 分库分表 -->
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>
+            <version>5.2.0</version>
         </dependency>
 
         <dependency>

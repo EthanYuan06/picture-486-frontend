@@ -11,6 +11,7 @@ import com.yuluo.picture486backend.constant.SpaceConstant;
 import com.yuluo.picture486backend.exception.BusinessException;
 import com.yuluo.picture486backend.exception.ErrorCode;
 import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.manager.sharding.DynamicShardingManager;
 import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
 import com.yuluo.picture486backend.model.dto.space.SpaceQueryRequest;
 import com.yuluo.picture486backend.model.entity.Picture;
@@ -32,6 +33,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -59,6 +61,10 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private RedissonClient redissonClient;
+
+    @Resource
+    @Lazy
+    private DynamicShardingManager dynamicShardingManager;
 
     @Override
     public long addSpace(SpaceAddRequest spaceAddRequest, User loginUser) {
@@ -132,6 +138,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     boolean result = spaceUserService.save(spaceUser);
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
+                dynamicShardingManager.createSpacePictureTable(space);
                 return space.getId();
             });
             return spaceId != null ? spaceId : 0;

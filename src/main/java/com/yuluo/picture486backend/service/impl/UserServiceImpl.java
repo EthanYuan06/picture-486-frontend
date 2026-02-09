@@ -30,6 +30,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.yuluo.picture486backend.constant.UserConstant.USER_LOGIN_STATE;
+
 /**
  * @author 东山羽洛
  */
@@ -159,11 +161,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             log.info("user login failed, userAccount cannot match userPassword.");
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
         }
-        //4.记录用户登录态
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
-        //5.记录用户登录态到Sa-Token中，便于多人相册鉴权
-        StpKit.SPACE.login(user.getId());//同时登录Space体系的账号（分为User体系用于整个项目，和Space体系用于多人相册）
-        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);//记录Space体系的登录态
+        Object attribute = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (attribute == null) {
+            //4.记录用户登录态
+            request.getSession().setAttribute(USER_LOGIN_STATE, user);
+            //5.记录用户登录态到Sa-Token中，便于多人相册鉴权
+            StpKit.SPACE.login(user.getId());//同时登录Space体系的账号（分为User体系用于整个项目，和Space体系用于多人相册）
+            StpKit.SPACE.getSession().set(USER_LOGIN_STATE, user);//记录Space体系的登录态
+        }
         return this.getLoginUserVo(user);
     }
 
@@ -176,12 +181,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean userLogout(HttpServletRequest request) {
         //1.判断是否登录
-        Object user = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        Object user = request.getSession().getAttribute(USER_LOGIN_STATE);
         if (user == null) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
         }
         //2.移除登录态
-        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
+        //3.移除Sa-Token登录态
+        StpKit.SPACE.logout();
         return true;
     }
 
@@ -194,7 +201,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public User getLoginUser(HttpServletRequest request) {
         //1.判断是否已登录
-        Object userObj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
