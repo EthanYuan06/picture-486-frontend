@@ -110,7 +110,7 @@ public class SpaceUserController {
     }
     
     @PostMapping("/list/me")
-    @Operation(summary = "查询我加入的团队空间列表（所有已登录用户）")
+    @Operation(summary = "查询我加入的多人相册列表（所有已登录用户）")
     public BaseResponse<List<SpaceUserVo>> listMyTeamSpace(HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         SpaceUserQueryRequest spaceUserQueryRequest = new SpaceUserQueryRequest();
