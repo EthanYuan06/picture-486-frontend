@@ -27,6 +27,7 @@ import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.mapper.PictureMapper;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486backend.service.MessageService;
 import com.yuluo.picture486backend.utils.PictureUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,6 +66,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private MessageService messageService;
 
     @Override
     public PictureVo uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -334,6 +338,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         updatePicture.setReviewTime(new Date());
         boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "操作失败");
+        // WebSocket通知
+        String reviewMsg = ObjUtil.defaultIfNull(updatePicture.getReviewMessage(), "无");
+        String message = null;
+        if (reviewStatusEnum != null) {
+            message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
+                    oldPicture.getId(),
+                    reviewStatusEnum.getText(),
+                    reviewMsg);
+        }
+        messageService.sendMessage(oldPicture.getUserId(), message);
     }
 
     @Override
@@ -370,6 +384,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }).toList();
         boolean result = this.updateBatchById(updatePictureList);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量审核失败");
+        // WebSocket通知
+        if (result) {
+            String reviewMsg = ObjUtil.defaultIfNull(reviewMessage, "无");
+            for (Picture picture : reviewPictureList) {
+                String message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
+                        picture.getId(),
+                        reviewStatusEnum.getText(),
+                        reviewMsg);
+                messageService.sendMessage(picture.getUserId(), message);
+            }
+        }
     }
 
     @Override
