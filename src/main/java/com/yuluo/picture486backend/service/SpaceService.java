@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
 import com.yuluo.picture486backend.model.dto.space.SpaceQueryRequest;
 import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
 import jakarta.servlet.http.HttpServletRequest;
 

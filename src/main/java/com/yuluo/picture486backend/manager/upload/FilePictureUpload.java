@@ -1,8 +1,8 @@
 package com.yuluo.picture486backend.manager.upload;
 
 import cn.hutool.core.io.FileUtil;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

@@ -2,7 +2,7 @@ package com.yuluo.picture486backend.model.vo.space_user;
 
 import com.yuluo.picture486backend.model.entity.SpaceUser;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
-import com.yuluo.picture486backend.model.vo.UserVo;
+import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 

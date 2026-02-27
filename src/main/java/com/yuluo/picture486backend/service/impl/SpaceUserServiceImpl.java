@@ -3,26 +3,23 @@ package com.yuluo.picture486backend.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.segments.MergeSegments;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserAddRequest;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserQueryRequest;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.SpaceUser;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceRoleEnum;
-import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
-import com.yuluo.picture486backend.model.vo.UserVo;
+import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import com.yuluo.picture486backend.model.vo.space_user.SpaceUserVo;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.SpaceUserService;
-import com.yuluo.picture486backend.mapper.SpaceUserMapper;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.infrastructure.mapper.SpaceUserMapper;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
@@ -43,7 +40,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     implements SpaceUserService{
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     @Lazy
@@ -70,7 +67,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
         //仅在添加时，根据相册id与用户id查询记录是否存在，并校验成员是否已经添加过
         if (add) {
             ThrowUtils.throwIf(spaceId == null || userId == null, ErrorCode.PARAMS_ERROR);
-            User user = userService.getById(userId);
+            User user = userApplicationService.getUser(userId);
             ThrowUtils.throwIf(user == null, ErrorCode.PARAMS_ERROR, "用户不存在");
             //判断用户是否已经在相册中，如果spaceId与userId同时匹配的记录存在，则用户已加入该相册
             SpaceUser oldSpaceUser = this.getOne(new QueryWrapper<SpaceUser>().eq("spaceId", spaceId).eq("userId", userId));
@@ -111,8 +108,8 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
         //关联查询用户信息
         Long userId = spaceUser.getUserId();
         if (userId != null && userId > 0){
-            User user = userService.getById(userId);
-            UserVo userVo = userService.getUserVo(user);
+            User user = userApplicationService.getUser(userId);
+            UserVo userVo = userApplicationService.getUserVo(user);
             spaceUserVo.setUser(userVo);
         }
         //关联查询相册信息
@@ -137,7 +134,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
         Set<Long> userIdSet = spaceUserList.stream().map(SpaceUser::getUserId).collect(Collectors.toSet());
         Set<Long> spaceIdSet = spaceUserList.stream().map(SpaceUser::getSpaceId).collect(Collectors.toSet());
         //批量查询用户和空间
-        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
+        Map<Long, List<User>> userIdUserListMap = userApplicationService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
         Map<Long, List<Space>> spaceIdSpaceListMap = spaceService.listByIds(spaceIdSet).stream().collect(Collectors.groupingBy(Space::getId));
         //填充SpaceUserVo的用户和空间信息
         spaceUserVoList.forEach(spaceUserVo -> {
@@ -148,7 +145,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
             if (userIdUserListMap.containsKey(userId)) {
                 user = userIdUserListMap.get(userId).get(0);
             }
-            spaceUserVo.setUser(userService.getUserVo(user));
+            spaceUserVo.setUser(userApplicationService.getUserVo(user));
             //填充空间信息
             Space space = null;
             if (spaceIdSpaceListMap.containsKey(spaceId)) {

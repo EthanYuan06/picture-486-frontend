@@ -1,23 +1,23 @@
 package com.yuluo.picture486backend.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yuluo.picture486backend.annotation.AuthCheck;
-import com.yuluo.picture486backend.common.BaseResponse;
-import com.yuluo.picture486backend.common.DeleteRequest;
-import com.yuluo.picture486backend.common.ResultUtils;
-import com.yuluo.picture486backend.constant.UserConstant;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486ddd.infrastructure.annotation.AuthCheck;
+import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
+import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
+import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
+import com.yuluo.picture486ddd.domain.user.constant.UserConstant;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486backend.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486backend.model.dto.space.*;
 import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
 import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.service.SpaceService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -40,7 +40,7 @@ public class SpaceController {
     private SpaceService spaceService;
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     private PictureService pictureService;
@@ -54,7 +54,7 @@ public class SpaceController {
         if (spaceAddRequest == null || request == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         return ResultUtils.success(spaceService.addSpace(spaceAddRequest, loginUser));
     }
 
@@ -64,7 +64,7 @@ public class SpaceController {
         if (deleteRequest == null || deleteRequest.getId() <= 0){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         Long spaceId = deleteRequest.getId();
         //判断相册是否存在
         Space oldSpace = spaceService.getById(spaceId);
@@ -72,7 +72,7 @@ public class SpaceController {
         //仅本人或管理员可删除
         spaceService.checkSpaceAuth(oldSpace, loginUser);
         //判断用户是否输入了确认删除的信息，管理员不需要输入确认文本
-        if (!userService.isAdmin(loginUser)){
+        if (!User.isAdmin(loginUser)){
             ThrowUtils.throwIf(deleteRequest.getDelConfirmInfo() == null, ErrorCode.PARAMS_ERROR, "请输入确认删除文本");
             if (!deleteRequest.getDelConfirmInfo().equals("我确定要删除此相册")){
                 throw new BusinessException(ErrorCode.OPERATION_ERROR, "请输入指定的文本");
@@ -130,7 +130,7 @@ public class SpaceController {
         //查询数据库
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         SpaceVo spaceVo = spaceService.getSpaceVo(space, request);
         List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
         spaceVo.setPermissionList(permissionList);
@@ -179,7 +179,7 @@ public class SpaceController {
         space.setEditTime(new Date());
         //数据校验
         spaceService.validSpace(space, false);
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         //判断相册是否存在
         Long id = spaceEditRequest.getId();
         Space oldSpace = spaceService.getById(id);

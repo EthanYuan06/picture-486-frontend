@@ -7,11 +7,11 @@ import com.yuluo.picture486backend.manager.auth.model.SpaceUserAuthConfig;
 import com.yuluo.picture486backend.manager.auth.model.SpaceUserRole;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.SpaceUser;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceRoleEnum;
 import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
 import com.yuluo.picture486backend.service.SpaceUserService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +25,7 @@ public class SpaceUserAuthManager {
     private SpaceUserService spaceUserService;
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     public static final SpaceUserAuthConfig SPACE_USER_AUTH_CONFIG;
 
@@ -66,7 +66,7 @@ public class SpaceUserAuthManager {
         List<String> ADMIN_PERMISSIONS = getPermissionsByRole(SpaceRoleEnum.ADMIN.getValue());
         // 公共图库
         if (space == null) {
-            if (userService.isAdmin(loginUser)) {
+            if (User.isAdmin(loginUser)) {
                 return ADMIN_PERMISSIONS;
             }
             return new ArrayList<>();
@@ -79,7 +79,7 @@ public class SpaceUserAuthManager {
         switch (spaceTypeEnum) {
             case PRIVATE:
                 // 私有空间，仅本人或管理员有所有权限
-                if (space.getUserId().equals(loginUser.getId()) || userService.isAdmin(loginUser)) {
+                if (space.getUserId().equals(loginUser.getId()) || User.isAdmin(loginUser)) {
                     return ADMIN_PERMISSIONS;
                 } else {
                     return new ArrayList<>();

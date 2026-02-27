@@ -1,5 +1,6 @@
 package com.yuluo.picture486backend.utils;
 
+import com.yuluo.picture486ddd.infrastructure.utils.ColorUtil;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

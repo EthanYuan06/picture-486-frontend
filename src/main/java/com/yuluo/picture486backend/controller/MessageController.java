@@ -1,14 +1,14 @@
 package com.yuluo.picture486backend.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yuluo.picture486backend.common.BaseResponse;
-import com.yuluo.picture486backend.common.ResultUtils;
+import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
+import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
 import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
 import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.MessageVo;
 import com.yuluo.picture486backend.service.MessageService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +24,14 @@ public class MessageController {
     private MessageService messageService;
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     /**
      * 发送消息（仅管理员）
      */
     @PostMapping("/send")
     public BaseResponse<Boolean> sendMessage(@RequestBody MessageSendRequest messageSendRequest, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         messageService.sendMessage(messageSendRequest, loginUser);
         return ResultUtils.success(true);
     }
@@ -41,7 +41,7 @@ public class MessageController {
      */
     @PostMapping("/list/page/vo")
     public BaseResponse<Page<MessageVo>> listMessageVoByPage(@RequestBody MessageQueryRequest messageQueryRequest, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         Page<MessageVo> messageVoPage = messageService.listMessageVoByPage(messageQueryRequest, loginUser);
         return ResultUtils.success(messageVoPage);
     }
@@ -51,7 +51,7 @@ public class MessageController {
      */
     @GetMapping("/unread/count")
     public BaseResponse<Long> getUnreadMessageCount(HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         long count = messageService.getUnreadMessageCount(loginUser);
         return ResultUtils.success(count);
     }
@@ -61,7 +61,7 @@ public class MessageController {
      */
     @GetMapping("/read")
     public BaseResponse<Boolean> readMessage(Long id, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         boolean result = messageService.readMessage(id, loginUser);
         return ResultUtils.success(result);
     }
@@ -71,7 +71,7 @@ public class MessageController {
      */
     @GetMapping("/read/all")
     public BaseResponse<Boolean> readAllMessage(HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         boolean result = messageService.readAllMessage(loginUser);
         return ResultUtils.success(result);
     }

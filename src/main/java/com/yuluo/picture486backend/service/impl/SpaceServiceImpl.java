@@ -7,27 +7,25 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.yuluo.picture486backend.constant.SpaceConstant;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486backend.SpaceConstant;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486backend.manager.sharding.DynamicShardingManager;
 import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
 import com.yuluo.picture486backend.model.dto.space.SpaceQueryRequest;
-import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.SpaceUser;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
 import com.yuluo.picture486backend.model.enums.SpaceRoleEnum;
 import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
-import com.yuluo.picture486backend.model.vo.PictureVo;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
-import com.yuluo.picture486backend.model.vo.UserVo;
+import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import com.yuluo.picture486backend.service.SpaceService;
-import com.yuluo.picture486backend.mapper.SpaceMapper;
+import com.yuluo.picture486ddd.infrastructure.mapper.SpaceMapper;
 import com.yuluo.picture486backend.service.SpaceUserService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.redisson.api.RLock;
@@ -51,7 +49,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     implements SpaceService{
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     private SpaceUserService spaceUserService;
@@ -88,7 +86,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         this.validSpace(space, true);
         Long userId = loginUser.getId();
         //校验权限，不允许非管理员创建默认级别以上的相册
-        if (!userService.isAdmin(loginUser) && space.getSpaceLevel() != SpaceLevelEnum.COMMON.getValue()){
+        if (!User.isAdmin(loginUser) && space.getSpaceLevel() != SpaceLevelEnum.COMMON.getValue()){
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "您没有权限创建该相册");
         }
         //设置用户ID
@@ -101,7 +99,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 throw new BusinessException(ErrorCode.SYSTEM_ERROR, "操作频繁，请稍后再试");
             }
             // 在获取锁后进行数量校验，确保校验和创建操作的原子性
-            if (!userService.isAdmin(loginUser) && space.getSpaceType().equals(SpaceTypeEnum.PRIVATE.getValue())) {
+            if (!User.isAdmin(loginUser) && space.getSpaceType().equals(SpaceTypeEnum.PRIVATE.getValue())) {
                 // 统计普通用户的私人相册数量
                 long userSpaceCount = this.lambdaQuery()
                         .eq(Space::getUserId, userId)
@@ -222,8 +220,8 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         //关联用户查询信息
         Long userId = space.getUserId();
         if(userId != null && userId > 0){
-            User user = userService.getById(userId);
-            UserVo userVo = userService.getUserVo(user);
+            User user = userApplicationService.getUser(userId);
+            UserVo userVo = userApplicationService.getUserVo(user);
             spaceVo.setUser(userVo);
         }
         return spaceVo;
@@ -243,7 +241,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         //1.从相册列表中提取所有不重复的用户ID
         Set<Long> userIdSet = spaceList.stream().map(Space::getUserId).collect(Collectors.toSet());
         //2.批量获取用户信息，并按用户ID进行分组
-        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
+        Map<Long, List<User>> userIdUserListMap = userApplicationService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
         //3.填充信息
         spaceVoList.forEach(spaceVo -> {
             Long userId = spaceVo.getUserId();
@@ -251,7 +249,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
             if(userIdUserListMap.containsKey(userId)){
                 user = userIdUserListMap.get(userId).get(0);
             }
-            spaceVo.setUser(userService.getUserVo(user));
+            spaceVo.setUser(userApplicationService.getUserVo(user));
         });
         spaceVoPage.setRecords(spaceVoList);
         return spaceVoPage;
@@ -282,7 +280,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     @Override
     public void checkSpaceAuth(Space space, User loginUser) {
         //仅相册创建人或管理员可操作
-        if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+        if (!space.getUserId().equals(loginUser.getId()) && !User.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
     }

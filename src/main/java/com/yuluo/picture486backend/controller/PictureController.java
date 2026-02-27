@@ -5,14 +5,14 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.yuluo.picture486backend.annotation.AuthCheck;
-import com.yuluo.picture486backend.common.BaseResponse;
-import com.yuluo.picture486backend.common.DeleteRequest;
-import com.yuluo.picture486backend.common.ResultUtils;
-import com.yuluo.picture486backend.constant.UserConstant;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486ddd.infrastructure.annotation.AuthCheck;
+import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
+import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
+import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
+import com.yuluo.picture486ddd.domain.user.constant.UserConstant;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486backend.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486backend.manager.auth.StpKit;
 import com.yuluo.picture486backend.manager.auth.annotation.SaSpaceCheckPermission;
@@ -21,21 +21,20 @@ import com.yuluo.picture486backend.manager.upload.FilePictureUpload;
 import com.yuluo.picture486backend.model.dto.picture.*;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.PictureReviewStatusEnum;
 import com.yuluo.picture486backend.model.vo.PictureTagCategory;
 import com.yuluo.picture486backend.model.vo.PictureVo;
 import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.service.SpaceService;
-import com.yuluo.picture486backend.service.UserService;
-import com.yuluo.picture486backend.utils.PictureUtil;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
+import com.yuluo.picture486ddd.infrastructure.utils.PictureUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
@@ -45,7 +44,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -59,7 +57,7 @@ public class PictureController {
     private PictureService pictureService;
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -81,7 +79,7 @@ public class PictureController {
             PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
         //用户校验
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         //校验是否是支持的图片格式
         ThrowUtils.throwIf(!PictureUtil.isAllowedImageFormat(multipartFile), ErrorCode.PARAMS_ERROR, "图片格式不支持");
@@ -97,7 +95,7 @@ public class PictureController {
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<Boolean> uploadCover(@RequestPart("file") MultipartFile file, HttpServletRequest request, @RequestParam("id") Long id) {
         // 获取登录用户
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         // 校验相册文件是否超过限制：大小不超过15MB
         ThrowUtils.throwIf(file.getSize() > 15 * 1024 * 1024, ErrorCode.PARAMS_ERROR, "封面图片过大，请重新上传");
         
@@ -125,7 +123,7 @@ public class PictureController {
     @Operation(summary = "删除图片")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         long pictureId = deleteRequest.getId();
         pictureService.deletePicture(pictureId, loginUser);
         //清除缓存
@@ -153,7 +151,7 @@ public class PictureController {
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR);
         //补充审核参数
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         pictureService.fillReviewPictureParams(picture, loginUser);
         //操作数据库更新图片信息
         boolean result = pictureService.updateById(picture);
@@ -194,7 +192,7 @@ public class PictureController {
             //已使用注解鉴权
 //            pictureService.checkPictureAuth(loginUser, picture);
         }
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         PictureVo pictureVo = pictureService.getPictureVo(picture, request);
         //获取权限列表
         List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
@@ -328,7 +326,7 @@ public class PictureController {
         if (pictureEditRequest == null || pictureEditRequest.getId() <= 0){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         pictureService.editPicture(pictureEditRequest, loginUser);
         //清除缓存
         clearCache("listPage");
@@ -341,7 +339,7 @@ public class PictureController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> doPictureReview(@RequestBody PictureReviewRequest pictureReviewRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(pictureReviewRequest == null, ErrorCode.PARAMS_ERROR);
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         pictureService.doPictureReview(pictureReviewRequest, loginUser);
         //清除缓存
         clearCache("listPage");
@@ -354,7 +352,7 @@ public class PictureController {
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> doPictureReviewByBatch(@RequestBody PictureReviewByBatchRequest pictureReviewByBatchRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(pictureReviewByBatchRequest == null, ErrorCode.PARAMS_ERROR);
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         pictureService.doPictureReviewByBatch(pictureReviewByBatchRequest, loginUser);
         //清除缓存
         clearCache("listPage");
@@ -367,7 +365,7 @@ public class PictureController {
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_EDIT)
     public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(pictureEditByBatchRequest == null, ErrorCode.PARAMS_ERROR);
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         pictureService.editPictures(pictureEditByBatchRequest, loginUser);
         //清除缓存
         clearCache("listPage");
@@ -383,7 +381,7 @@ public class PictureController {
             PictureUploadRequest pictureUploadRequest,
             HttpServletRequest request) {
         //用户校验
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
         // 参数校验
         ThrowUtils.throwIf(multipartFiles == null || multipartFiles.length == 0, ErrorCode.PARAMS_ERROR, "未选择任何文件");
@@ -403,7 +401,7 @@ public class PictureController {
     @Operation(summary = "批量删除图片")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_DELETE)
     public BaseResponse<Boolean> deletePictureByBatch(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         List<Long> PictureIds = deleteRequest.getIds();
         //参数校验
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);

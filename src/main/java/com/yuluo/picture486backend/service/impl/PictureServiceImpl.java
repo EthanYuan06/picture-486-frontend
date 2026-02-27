@@ -1,34 +1,32 @@
 package com.yuluo.picture486backend.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.date.DateTime;
-import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.manager.CosManager;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
+import com.yuluo.picture486ddd.infrastructure.api.CosManager;
 import com.yuluo.picture486backend.manager.upload.FilePictureUpload;
 import com.yuluo.picture486backend.manager.upload.PictureUploadTemplate;
 import com.yuluo.picture486backend.manager.upload.UrlPictureUpload;
 import com.yuluo.picture486backend.model.dto.picture.*;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.PictureReviewStatusEnum;
 import com.yuluo.picture486backend.model.vo.PictureVo;
-import com.yuluo.picture486backend.model.vo.UserVo;
+import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import com.yuluo.picture486backend.service.PictureService;
-import com.yuluo.picture486backend.mapper.PictureMapper;
+import com.yuluo.picture486ddd.infrastructure.mapper.PictureMapper;
 import com.yuluo.picture486backend.service.SpaceService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486backend.service.MessageService;
-import com.yuluo.picture486backend.utils.PictureUtil;
+import com.yuluo.picture486ddd.infrastructure.utils.PictureUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +54,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private UrlPictureUpload urlPictureUpload;
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     private CosManager cosManager;
@@ -103,7 +101,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             Picture oldPicture = this.getById(pictureId);
             ThrowUtils.throwIf(oldPicture == null, ErrorCode.NOT_FOUND_ERROR, "图片不存在");
             //仅本人或管理员可编辑
-            if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            if (!oldPicture.getUserId().equals(loginUser.getId()) && !User.isAdmin(loginUser)) {
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限操作该图片");
             }
             //校验相册是否一致
@@ -262,8 +260,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //关联用户查询信息
         Long userId = picture.getUserId();
         if(userId != null && userId > 0){
-            User user = userService.getById(userId);
-            UserVo userVo = userService.getUserVo(user);
+            User user = userApplicationService.getUser(userId);
+            UserVo userVo = userApplicationService.getUserVo(user);
             pictureVo.setUser(userVo);
         }
         return pictureVo;
@@ -283,7 +281,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         //从图片列表中提取所有不重复的用户ID
         Set<Long> userIdSet = pictureList.stream().map(Picture::getUserId).collect(Collectors.toSet());
         //批量获取用户信息，并按用户ID进行分组
-        Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
+        Map<Long, List<User>> userIdUserListMap = userApplicationService.listByIds(userIdSet).stream().collect(Collectors.groupingBy(User::getId));
         //填充信息
         pictureVoList.forEach(pictureVo -> {
             Long userId = pictureVo.getUserId();
@@ -291,7 +289,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if(userIdUserListMap.containsKey(userId)){
                 user = userIdUserListMap.get(userId).get(0);
             }
-            pictureVo.setUser(userService.getUserVo(user));
+            pictureVo.setUser(userApplicationService.getUserVo(user));
         });
         pictureVoPage.setRecords(pictureVoList);
         return pictureVoPage;
@@ -399,7 +397,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Override
     public void fillReviewPictureParams(Picture picture, User loginUser){
-        if (userService.isAdmin(loginUser)){
+        if (User.isAdmin(loginUser)){
             //管理员自动过审
             picture.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
             picture.setReviewTime(new Date());
@@ -463,7 +461,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long spaceId = picture.getSpaceId();
         if (spaceId == null){
             //公共图库，仅本人和管理员可删除
-            if (!userService.isAdmin(loginUser) && !loginUser.getId().equals(picture.getUserId())){
+            if (!User.isAdmin(loginUser) && !loginUser.getId().equals(picture.getUserId())){
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
             }
         }else {
@@ -641,7 +639,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
         } else {
             // 公共图库中的图片，只有管理员可以批量删除
-            if (!userService.isAdmin(loginUser)){
+            if (!User.isAdmin(loginUser)){
                 throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无图片批量删除权限");
             }
         }

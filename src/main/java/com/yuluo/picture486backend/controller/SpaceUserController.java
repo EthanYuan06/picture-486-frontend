@@ -1,22 +1,22 @@
 package com.yuluo.picture486backend.controller;
 
 import cn.hutool.core.util.ObjectUtil;
-import com.yuluo.picture486backend.common.BaseResponse;
-import com.yuluo.picture486backend.common.DeleteRequest;
-import com.yuluo.picture486backend.common.ResultUtils;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
+import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
+import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486backend.manager.auth.annotation.SaSpaceCheckPermission;
 import com.yuluo.picture486backend.manager.auth.model.SpaceUserPermissionConstant;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserAddRequest;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserEditRequest;
 import com.yuluo.picture486backend.model.dto.space_user.SpaceUserQueryRequest;
 import com.yuluo.picture486backend.model.entity.SpaceUser;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.space_user.SpaceUserVo;
 import com.yuluo.picture486backend.service.SpaceUserService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
@@ -38,7 +38,7 @@ public class SpaceUserController {
     @Resource
     private SpaceUserService spaceUserService;
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @PostMapping("/add")
     @Operation(summary = "添加成员到相册")
@@ -112,7 +112,7 @@ public class SpaceUserController {
     @PostMapping("/list/me")
     @Operation(summary = "查询我加入的多人相册列表（所有已登录用户）")
     public BaseResponse<List<SpaceUserVo>> listMyTeamSpace(HttpServletRequest request) {
-        User loginUser = userService.getLoginUser(request);
+        User loginUser = userApplicationService.getLoginUser(request);
         SpaceUserQueryRequest spaceUserQueryRequest = new SpaceUserQueryRequest();
         spaceUserQueryRequest.setUserId(loginUser.getId());
         List<SpaceUser> spaceUserList = spaceUserService.list(spaceUserService.getQueryWrapper(spaceUserQueryRequest));

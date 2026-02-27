@@ -1,5 +1,6 @@
 package com.yuluo.picture486backend.model.vo;
 
+import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import com.yuluo.picture486backend.model.entity.Space;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;

@@ -2,7 +2,7 @@ package com.yuluo.picture486backend.service;
 
 import com.yuluo.picture486backend.model.dto.space.analyze.*;
 import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.space.analyze.*;
 
 import java.util.List;

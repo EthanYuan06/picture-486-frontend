@@ -1,6 +1,6 @@
 package com.yuluo.picture486backend.model.dto.space;
 
-import com.yuluo.picture486backend.common.PageRequest;
+import com.yuluo.picture486ddd.infrastructure.common.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

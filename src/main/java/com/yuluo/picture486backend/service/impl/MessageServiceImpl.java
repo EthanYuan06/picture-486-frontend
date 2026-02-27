@@ -3,17 +3,17 @@ package com.yuluo.picture486backend.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
-import com.yuluo.picture486backend.mapper.SysMessageMapper;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
+import com.yuluo.picture486ddd.infrastructure.mapper.SysMessageMapper;
 import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
 import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
 import com.yuluo.picture486backend.model.entity.SysMessage;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.MessageVo;
 import com.yuluo.picture486backend.service.MessageService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486backend.ws.WebSocketServer;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ import java.util.List;
 public class MessageServiceImpl implements MessageService {
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     private SysMessageMapper sysMessageMapper;
@@ -65,7 +65,7 @@ public class MessageServiceImpl implements MessageService {
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
 
         // 仅管理员可直接调用发送接口（例如测试或系统通知）
-        if (!userService.isAdmin(loginUser)) {
+        if (!User.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限发送消息");
         }
 

@@ -6,25 +6,23 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.extra.servlet.ServletUtil;
 import cn.hutool.http.ContentType;
 import cn.hutool.http.Header;
 import cn.hutool.json.JSONUtil;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486backend.manager.auth.model.SpaceUserPermissionConstant;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486backend.model.entity.SpaceUser;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceRoleEnum;
 import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
 import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486backend.service.SpaceUserService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
-import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -33,7 +31,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.*;
 
-import static com.yuluo.picture486backend.constant.UserConstant.USER_LOGIN_STATE;
+import static com.yuluo.picture486ddd.domain.user.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 自定义权限加载接口实现类
@@ -56,7 +54,7 @@ public class StpInterfaceImpl implements StpInterface {
     @Resource
     private SpaceService spaceService;
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
     /**
      * 返回一个账号所拥有的权限码集合
      */
@@ -122,7 +120,7 @@ public class StpInterfaceImpl implements StpInterface {
             spaceId = picture.getSpaceId();
             // 公共图库，仅本人或管理员可操作
             if (spaceId == null) {
-                if (picture.getUserId().equals(userId) || userService.isAdmin(loginUser)) {
+                if (picture.getUserId().equals(userId) || User.isAdmin(loginUser)) {
                     return ADMIN_PERMISSIONS;
                 } else {
                     // 不是自己的图片，仅可查看
@@ -138,7 +136,7 @@ public class StpInterfaceImpl implements StpInterface {
         // 根据 Space 类型判断权限
         if (space.getSpaceType() == SpaceTypeEnum.PRIVATE.getValue()) {
             // 私有相册，仅本人或管理员有权限
-            if (space.getUserId().equals(userId) || userService.isAdmin(loginUser)) {
+            if (space.getUserId().equals(userId) || User.isAdmin(loginUser)) {
                 return ADMIN_PERMISSIONS;
             } else {
                 return new ArrayList<>();

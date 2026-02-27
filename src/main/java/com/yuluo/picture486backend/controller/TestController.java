@@ -1,11 +1,11 @@
 package com.yuluo.picture486backend.controller;
 
-import com.yuluo.picture486backend.common.BaseResponse;
-import com.yuluo.picture486backend.common.ResultUtils;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
+import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.service.SpaceService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

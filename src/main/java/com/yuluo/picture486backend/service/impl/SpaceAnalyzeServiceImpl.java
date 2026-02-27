@@ -4,19 +4,19 @@ import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.yuluo.picture486backend.exception.BusinessException;
-import com.yuluo.picture486backend.exception.ErrorCode;
-import com.yuluo.picture486backend.exception.ThrowUtils;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486backend.model.dto.space.analyze.*;
 import com.yuluo.picture486backend.model.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.User;
+import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.PictureReviewStatusEnum;
 import com.yuluo.picture486backend.model.vo.space.analyze.*;
 import com.yuluo.picture486backend.service.PictureService;
 import com.yuluo.picture486backend.service.SpaceAnalyzeService;
 import com.yuluo.picture486backend.service.SpaceService;
-import com.yuluo.picture486backend.service.UserService;
+import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
 
     @Resource
-    private UserService userService;
+    private UserApplicationService userApplicationService;
 
     @Resource
     private SpaceService spaceService;
@@ -46,7 +46,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         if (spaceUsageAnalyzeRequest.isQueryAll() || spaceUsageAnalyzeRequest.isQueryPublic()) {
             //查询全部相册或公共图库
             //仅管理员访问
-            boolean isAdmin = userService.isAdmin(loginUser);
+            boolean isAdmin = User.isAdmin(loginUser);
             ThrowUtils.throwIf(!isAdmin, ErrorCode.NO_AUTH_ERROR, "无分析权限");
             //统计公共图库资源使用
             QueryWrapper<Picture> queryWrapper = new QueryWrapper<>();
@@ -232,7 +232,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
     public List<Space> getSpaceRankAnalyze(SpaceRankAnalyzeRequest spaceRankAnalyzeRequest, User loginUser) {
         ThrowUtils.throwIf(spaceRankAnalyzeRequest == null, ErrorCode.PARAMS_ERROR);
         //仅管理员可查看相册排行
-        ThrowUtils.throwIf(!userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "没有权限查看相册使用量排行");
+        ThrowUtils.throwIf(!User.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "没有权限查看相册使用量排行");
         //构造查询条件
         QueryWrapper<Space> queryWrapper = new QueryWrapper<>();
         queryWrapper.select("id", "spaceName", "userId", "totalSize")
@@ -251,7 +251,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         //检查权限
         if (spaceAnalyzeRequest.isQueryAll() || spaceAnalyzeRequest.isQueryPublic()){
             //全相册分析或公共图库的权限校验：仅管理员访问
-            ThrowUtils.throwIf(!userService.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "无公共图库访问权限");
+            ThrowUtils.throwIf(!User.isAdmin(loginUser), ErrorCode.NO_AUTH_ERROR, "无公共图库访问权限");
         } else {
             //私有相册权限校验：仅相册创建人与管理员访问
             Long spaceId = spaceAnalyzeRequest.getSpaceId();
