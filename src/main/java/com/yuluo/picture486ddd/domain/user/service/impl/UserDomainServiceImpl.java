@@ -6,7 +6,6 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486ddd.domain.user.constant.UserConstant;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.domain.user.repository.UserRepository;
@@ -16,7 +15,6 @@ import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
-import com.yuluo.picture486ddd.infrastructure.mapper.UserMapper;
 import com.yuluo.picture486ddd.interfaces.assembler.UserAssembler;
 import com.yuluo.picture486ddd.interfaces.dto.user.UserAddRequest;
 import com.yuluo.picture486ddd.interfaces.dto.user.UserQueryRequest;
@@ -24,9 +22,9 @@ import com.yuluo.picture486ddd.interfaces.dto.user.UserRegisterRequest;
 import com.yuluo.picture486ddd.interfaces.dto.user.UserResetRequest;
 import com.yuluo.picture486ddd.interfaces.vo.user.LoginUserVo;
 import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
-import com.yuluo.picture486backend.manager.auth.StpKit;
-import com.yuluo.picture486backend.manager.upload.FilePictureUpload;
-import com.yuluo.picture486backend.model.dto.picture.PictureUploadResult;
+import com.yuluo.picture486ddd.infrastructure.manager.auth.StpKit;
+import com.yuluo.picture486ddd.infrastructure.manager.upload.FilePictureUpload;
+import com.yuluo.picture486ddd.interfaces.dto.picture.PictureUploadResult;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -47,8 +45,7 @@ import static com.yuluo.picture486ddd.domain.user.entity.User.validKey;
  */
 @Service
 @Slf4j
-public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
-    implements UserDomainService {
+public class UserDomainServiceImpl implements UserDomainService {
 
     @Resource
     private UserRepository userRepository;
@@ -155,7 +152,7 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
         long userId = currentUser.getId();
         currentUser = userRepository.getById(userId);
         if (currentUser == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
         return currentUser;
     }
@@ -264,7 +261,7 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
         //默认密码 12345678
         final String DEFAULT_PASSWORD = "12345678";
         user.setUserPassword(this.getEncryptedPassword(DEFAULT_PASSWORD));
-        boolean result = this.save(user);
+        boolean result = userRepository.save(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return user.getId();
     }
@@ -284,7 +281,7 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
             User updateUser = new User();
             updateUser.setId(loginUser.getId());
             updateUser.setUserAvatar(uploadResult.getUrl());
-            boolean result = this.updateById(updateUser);
+            boolean result = userRepository.updateById(updateUser);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "头像上传失败");
         }
         if (loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE)) {
@@ -296,7 +293,7 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
             User updateUser = new User();
             updateUser.setId(id);
             updateUser.setUserAvatar(uploadResult.getUrl());
-            boolean result = this.updateById(updateUser);
+            boolean result = userRepository.updateById(updateUser);
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "头像上传失败");
         }
     }
@@ -306,7 +303,7 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        return removeById(deleteRequest.getId());
+        return userRepository.removeById(deleteRequest.getId());
     }
 
     @Override
@@ -315,7 +312,7 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
         if (!UserRoleEnum.ADMIN.getValue().equals(user.getUserRole()) && !user.getId().equals(getLoginUser(request).getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        boolean result = this.updateById(user);
+        boolean result = userRepository.updateById(user);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return result;
     }
@@ -325,7 +322,7 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
         ThrowUtils.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR);
         long current = userQueryRequest.getCurrent();
         long size = userQueryRequest.getPageSize();
-        Page<User> userPage = this.page(new Page<>(current, size),
+        Page<User> userPage = userRepository.page(new Page<>(current, size),
                 this.getQueryWrapper(userQueryRequest));
         Page<UserVo> userVoPage = new Page<>(current, size, userPage.getTotal());
         List<UserVo> userVoList = this.getUserVoList(userPage.getRecords());
@@ -338,7 +335,12 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
         ThrowUtils.throwIf(userQueryRequest == null, ErrorCode.PARAMS_ERROR);
         long current = userQueryRequest.getCurrent();
         long size = userQueryRequest.getPageSize();
-        return this.page(new Page<>(current, size), this.getQueryWrapper(userQueryRequest));
+        return userRepository.page(new Page<>(current, size), this.getQueryWrapper(userQueryRequest));
+    }
+
+    @Override
+    public List<User> listByIds(Set<Long> userIdSet) {
+        return userRepository.listByIds(userIdSet);
     }
 
     @Override
@@ -355,28 +357,10 @@ public class UserDomainServiceImpl extends ServiceImpl<UserMapper, User>
         //设置重置用户的加密密码
         String encryptedPassword = this.getEncryptedPassword(userResetRequest.getUserPassword());
         resetUser.setUserPassword(encryptedPassword);
-        return this.updateById(resetUser);
+        return userRepository.updateById(resetUser);
     }
 
 
-    @Override
-    public Boolean removeById(Long id) {
-        return userRepository.removeById(id);
-    }
 
-    @Override
-    public boolean updateById(User user) {
-        return userRepository.updateById(user);
-    }
-
-    @Override
-    public Page<User> page(Page<User> userPage, QueryWrapper<User> queryWrapper) {
-        return userRepository.page(userPage, queryWrapper);
-    }
-
-    @Override
-    public List<User> listByIds(Set<Long> userIdSet) {
-        return userRepository.listByIds(userIdSet);
-    }
 
 }

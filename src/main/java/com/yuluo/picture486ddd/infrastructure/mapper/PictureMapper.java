@@ -1,6 +1,6 @@
 package com.yuluo.picture486ddd.infrastructure.mapper;
 
-import com.yuluo.picture486backend.model.entity.Picture;
+import com.yuluo.picture486ddd.domain.picture.entity.Picture;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

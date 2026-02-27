@@ -8,12 +8,12 @@ import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486backend.model.dto.space.analyze.*;
-import com.yuluo.picture486backend.model.entity.Picture;
+import com.yuluo.picture486ddd.domain.picture.entity.Picture;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486ddd.domain.user.entity.User;
-import com.yuluo.picture486backend.model.enums.PictureReviewStatusEnum;
+import com.yuluo.picture486ddd.domain.picture.valueobject.PictureReviewStatusEnum;
 import com.yuluo.picture486backend.model.vo.space.analyze.*;
-import com.yuluo.picture486backend.service.PictureService;
+import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import com.yuluo.picture486backend.service.SpaceAnalyzeService;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
@@ -37,7 +37,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
     private SpaceService spaceService;
 
     @Resource
-    private PictureService pictureService;
+    private PictureDomainService pictureDomainService;
 
     @Override
     public SpaceUsageAnalyzeResponse getSpaceUsageAnalyze(SpaceUsageAnalyzeRequest spaceUsageAnalyzeRequest, User loginUser) {
@@ -69,9 +69,9 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
                 pendingQuerywrapper.isNotNull("spaceId");
             }
             pendingQuerywrapper.eq("reviewStatus", PictureReviewStatusEnum.REVIEWING.getValue());
-            long pendingCount = pictureService.getBaseMapper().selectCount(pendingQuerywrapper);
+            long pendingCount = pictureDomainService.getBaseMapper().selectCount(pendingQuerywrapper);
 
-            List<Object> pictureObjList = pictureService.getBaseMapper().selectObjs(queryWrapper);
+            List<Object> pictureObjList = pictureDomainService.getBaseMapper().selectObjs(queryWrapper);
             long usedSize = pictureObjList.stream().mapToLong(result -> result instanceof Long ? (Long) result : 0).sum();
             long usedCount = pictureObjList.size();
             //封装返回结果
@@ -123,7 +123,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         queryWrapper.select("category AS category", "count(*) AS count", "sum(picSize) AS totalSize")
                 .groupBy("category");
         //转换结果
-        return pictureService.getBaseMapper().selectMaps(queryWrapper)
+        return pictureDomainService.getBaseMapper().selectMaps(queryWrapper)
                 .stream()
                 .map(result -> {
                     String category = result.get("category") != null ? result.get("category").toString() : "未分类";
@@ -146,7 +146,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         //查询所有符合条件的标签
         queryWrapper.select("tags");
         List<String> tagsJsonList =
-                pictureService.getBaseMapper().selectMaps(queryWrapper)//根据tags字段查询所有数据
+                pictureDomainService.getBaseMapper().selectMaps(queryWrapper)//根据tags字段查询所有数据
                 .stream().filter(ObjUtil::isNotNull)//只筛选tags不为null的数据
                 .map(map -> map.get("tags") != null ? map.get("tags").toString() : null)
                 .filter(Objects::nonNull)
@@ -182,7 +182,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         //查询所有符合条件的图片大小
         queryWrapper.select("picSize");
         List<Long> picSizes =
-                pictureService.getBaseMapper().selectMaps(queryWrapper)
+                pictureDomainService.getBaseMapper().selectMaps(queryWrapper)
                         .stream().filter(ObjUtil::isNotNull)
                         .map(map -> ((Number) map.get("picSize")).longValue())
                         .toList();
@@ -220,7 +220,7 @@ public class SpaceAnalyzeServiceImpl implements SpaceAnalyzeService {
         queryWrapper.groupBy("period").orderByAsc("period");
 
         //查询结果并转换
-        return pictureService.getBaseMapper().selectMaps(queryWrapper)
+        return pictureDomainService.getBaseMapper().selectMaps(queryWrapper)
                 .stream().map(result -> {
                     String period = result.get("period").toString();
                     Long count = ((Number) result.get("count")).longValue();

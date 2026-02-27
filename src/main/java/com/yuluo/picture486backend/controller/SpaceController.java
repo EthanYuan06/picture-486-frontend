@@ -9,13 +9,13 @@ import com.yuluo.picture486ddd.domain.user.constant.UserConstant;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
-import com.yuluo.picture486backend.manager.auth.SpaceUserAuthManager;
+import com.yuluo.picture486ddd.infrastructure.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486backend.model.dto.space.*;
 import com.yuluo.picture486backend.model.entity.Space;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
 import com.yuluo.picture486backend.model.vo.SpaceVo;
-import com.yuluo.picture486backend.service.PictureService;
+import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import com.yuluo.picture486backend.service.SpaceService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,7 +43,7 @@ public class SpaceController {
     private UserApplicationService userApplicationService;
 
     @Resource
-    private PictureService pictureService;
+    private PictureDomainService pictureDomainService;
     @Autowired
     private SpaceUserAuthManager spaceUserAuthManager;
 
@@ -79,8 +79,8 @@ public class SpaceController {
             }
         }
         //先删除该相册下的所有图片
-        List<Long> pictureIdsToDel = pictureService.getPictureIds(spaceId);
-        Boolean isDelPictures = pictureService.deletePictures(pictureIdsToDel, loginUser);
+        List<Long> pictureIdsToDel = pictureDomainService.getPictureIds(spaceId);
+        Boolean isDelPictures = pictureDomainService.deletePictures(pictureIdsToDel, loginUser);
         ThrowUtils.throwIf(!isDelPictures, ErrorCode.OPERATION_ERROR, "删除相册所有图片失败");
         //操作数据库删除相册
         boolean isDelSpace = spaceService.removeById(spaceId);

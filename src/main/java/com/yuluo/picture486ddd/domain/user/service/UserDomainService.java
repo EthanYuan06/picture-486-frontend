@@ -20,7 +20,7 @@ import java.util.Set;
 /**
  * @author 东山羽洛
  */
-public interface UserDomainService extends IService<User>{
+public interface UserDomainService {
     /**
      * 用户注册
      *
@@ -106,10 +106,6 @@ public interface UserDomainService extends IService<User>{
     Page<UserVo> listUserVoByPage(UserQueryRequest userQueryRequest);
 
     Page<User> listUserByPage(UserQueryRequest userQueryRequest);
-
-    Boolean removeById(Long id);
-
-    Page<User> page(Page<User> userPage, QueryWrapper<User> queryWrapper);
 
     List<User> listByIds(Set<Long> userIdSet);
 

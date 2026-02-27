@@ -11,7 +11,7 @@ import com.yuluo.picture486backend.SpaceConstant;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
-import com.yuluo.picture486backend.manager.sharding.DynamicShardingManager;
+import com.yuluo.picture486ddd.infrastructure.manager.sharding.DynamicShardingManager;
 import com.yuluo.picture486backend.model.dto.space.SpaceAddRequest;
 import com.yuluo.picture486backend.model.dto.space.SpaceQueryRequest;
 import com.yuluo.picture486backend.model.entity.Space;
