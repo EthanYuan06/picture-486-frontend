@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserAddRequest;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserQueryRequest;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserRegisterRequest;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserResetRequest;
+import com.yuluo.picture486ddd.interfaces.dto.user.*;
 import com.yuluo.picture486ddd.interfaces.vo.user.LoginUserVo;
 import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import jakarta.servlet.http.HttpServletRequest;
@@ -101,7 +98,7 @@ public interface UserDomainService {
 
     boolean deleteUser(DeleteRequest deleteRequest);
 
-    boolean updateUser(User user, HttpServletRequest request);
+    boolean updateUser(User user, UserUpdateRequest userUpdateRequest,HttpServletRequest request);
 
     Page<UserVo> listUserVoByPage(UserQueryRequest userQueryRequest);
 

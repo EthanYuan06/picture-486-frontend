@@ -16,10 +16,7 @@ import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486ddd.interfaces.assembler.UserAssembler;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserAddRequest;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserQueryRequest;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserRegisterRequest;
-import com.yuluo.picture486ddd.interfaces.dto.user.UserResetRequest;
+import com.yuluo.picture486ddd.interfaces.dto.user.*;
 import com.yuluo.picture486ddd.interfaces.vo.user.LoginUserVo;
 import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.StpKit;
@@ -307,12 +304,13 @@ public class UserDomainServiceImpl implements UserDomainService {
     }
 
     @Override
-    public boolean updateUser(User user, HttpServletRequest request) {
+    public boolean updateUser(User user, UserUpdateRequest userUpdateRequest,HttpServletRequest request) {
         //用户只能修改自己的信息，管理员可以修改任意用户的信息
         if (!UserRoleEnum.ADMIN.getValue().equals(user.getUserRole()) && !user.getId().equals(getLoginUser(request).getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        boolean result = userRepository.updateById(user);
+        User updateUser = UserAssembler.toUserEntity(userUpdateRequest);
+        boolean result = userRepository.updateById(updateUser);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return result;
     }

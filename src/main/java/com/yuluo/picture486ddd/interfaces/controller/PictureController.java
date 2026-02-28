@@ -68,12 +68,6 @@ public class PictureController {
     @Resource
     private SpaceService spaceService;
 
-    @Resource
-    private FilePictureUpload filePictureUpload;
-
-    @Resource
-    private SpaceUserAuthManager spaceUserAuthManager;
-
     @PostMapping("/upload")
     @Operation(summary = "上传图片")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)

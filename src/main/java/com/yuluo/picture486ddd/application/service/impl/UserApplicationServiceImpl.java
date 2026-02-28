@@ -154,8 +154,9 @@ public class UserApplicationServiceImpl implements UserApplicationService {
     }
 
     @Override
-    public boolean updateUser(User user, HttpServletRequest request) {
-        return userDomainService.updateUser(user, request);
+    public boolean updateUser(UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
+        User user = this.getLoginUser(request);
+        return userDomainService.updateUser(user, userUpdateRequest, request);
     }
 
     @Override

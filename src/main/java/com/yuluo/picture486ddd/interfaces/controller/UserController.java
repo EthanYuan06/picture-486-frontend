@@ -94,8 +94,7 @@ public class UserController {
     @PostMapping("/update")
     @Operation(summary = "更新用户信息")
     public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
-        User user = UserAssembler.toUserEntity(userUpdateRequest);
-        return ResultUtils.success(userApplicationService.updateUser(user, request));
+        return ResultUtils.success(userApplicationService.updateUser(userUpdateRequest, request));
     }
 
     @PostMapping("/list/page/vo")

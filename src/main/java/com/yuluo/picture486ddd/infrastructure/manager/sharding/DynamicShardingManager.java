@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * 分表管理器类
  * 解决框架本身不支持动态维护分表的问题
  */
-//@Component
+@Component
 @Slf4j
 public class DynamicShardingManager {
 

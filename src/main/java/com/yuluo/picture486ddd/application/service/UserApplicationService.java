@@ -94,7 +94,7 @@ public interface UserApplicationService {
 
     boolean deleteUser(DeleteRequest deleteRequest);
 
-    boolean updateUser(User user, HttpServletRequest request);
+    boolean updateUser(UserUpdateRequest userUpdateRequest, HttpServletRequest request);
 
     Page<UserVo> listUserVoByPage(UserQueryRequest userQueryRequest);
 
