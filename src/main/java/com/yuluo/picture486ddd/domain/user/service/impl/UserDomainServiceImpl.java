@@ -88,10 +88,13 @@ public class UserDomainServiceImpl implements UserDomainService {
      */
     @Override
     public LoginUserVo userLogin(String userAccount, String userPassword, HttpServletRequest request) {
-
-        //2.加密
+        //移除登录态
+        request.getSession().removeAttribute(USER_LOGIN_STATE);
+        //移除Sa-Token登录态
+        StpKit.SPACE.logout();
+        //加密
         String encryptedPassword = getEncryptedPassword(userPassword);
-        //3.查询用户是否存在（防止缓存与数据库不一致）
+        //查询用户是否存在（防止缓存与数据库不一致）
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userAccount", userAccount);
         queryWrapper.eq("userPassword", encryptedPassword);
@@ -119,6 +122,7 @@ public class UserDomainServiceImpl implements UserDomainService {
      */
     @Override
     public boolean userLogout(HttpServletRequest request) {
+        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         //1.判断是否登录
         Object user = request.getSession().getAttribute(USER_LOGIN_STATE);
         if (user == null) {

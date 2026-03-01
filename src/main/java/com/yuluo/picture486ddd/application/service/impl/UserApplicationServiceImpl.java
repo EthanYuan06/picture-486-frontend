@@ -77,7 +77,6 @@ public class UserApplicationServiceImpl implements UserApplicationService {
      */
     @Override
     public boolean userLogout(HttpServletRequest request) {
-        ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
         return userDomainService.userLogout(request);
     }
 
