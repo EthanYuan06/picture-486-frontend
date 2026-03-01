@@ -7,6 +7,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.yuluo.picture486ddd.application.service.PictureApplicationService;
 import com.yuluo.picture486ddd.infrastructure.annotation.AuthCheck;
+import com.yuluo.picture486ddd.infrastructure.api.CosManager;
 import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
 import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
 import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
@@ -79,6 +80,13 @@ public class PictureController {
         clearCache("listPageVo");
         return ResultUtils.success(pictureVo);
     }
+
+    @PostMapping("/ai_generate_description")
+    @Operation(summary = "AI生成图片简介")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
+    public BaseResponse<String> AiGenerateDescription(@RequestPart("file") MultipartFile multipartFile) {
+        return ResultUtils.success(pictureApplicationService.AiGenerateDescription(multipartFile));
+}
 
     @PostMapping("/upload/cover")
     @Operation(summary = "上传相册封面")

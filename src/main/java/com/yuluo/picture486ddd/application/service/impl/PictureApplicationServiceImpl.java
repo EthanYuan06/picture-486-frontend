@@ -212,6 +212,11 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
         return pictureDomainService.getPictureById(id);
     }
 
+    @Override
+    public String AiGenerateDescription(MultipartFile multipartFile) {
+        return pictureDomainService.AiGenerateDescription(multipartFile);
+    }
+
 }
 
 

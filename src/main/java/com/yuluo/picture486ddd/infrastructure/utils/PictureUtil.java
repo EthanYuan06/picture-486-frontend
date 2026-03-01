@@ -1,15 +1,20 @@
 package com.yuluo.picture486ddd.infrastructure.utils;
 
+import com.qcloud.cos.model.PutObjectResult;
+import com.yuluo.picture486ddd.infrastructure.api.CosManager;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.File;
+import java.io.*;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 /**
  * 图片工具类
  */
 public class PictureUtil {
-    
+
+
+
     /**
      * 计算批量上传图片的总大小
      * 
@@ -219,6 +224,60 @@ public class PictureUtil {
         }
         
         return false;
+    }
+    
+    /**
+     * 将本地图片文件转换为Base64编码（适用于AI处理等场景）
+     * 
+     * @param file 本地图片文件
+     * @return Base64编码的图片字符串
+     */
+    public static String convertLocalImageToBase64(File file) {
+        if (file == null || !file.exists()) {
+            throw new IllegalArgumentException("文件不存在");
+        }
+        
+        try (FileInputStream fis = new FileInputStream(file);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                bos.write(buffer, 0, bytesRead);
+            }
+            
+            byte[] imageBytes = bos.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("图片转换Base64失败", e);
+        }
+    }
+    
+    /**
+     * 将MultipartFile转换为Base64编码
+     * 
+     * @param multipartFile 上传的文件
+     * @return Base64编码的图片字符串
+     */
+    public static String convertMultipartFileToBase64(MultipartFile multipartFile) {
+        if (multipartFile == null || multipartFile.isEmpty()) {
+            throw new IllegalArgumentException("文件不能为空");
+        }
+        
+        try (InputStream inputStream = multipartFile.getInputStream();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            
+            byte[] imageBytes = outputStream.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("图片转换Base64失败", e);
+        }
     }
 
 

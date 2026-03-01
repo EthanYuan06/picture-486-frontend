@@ -7,9 +7,11 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.qcloud.cos.model.PutObjectResult;
 import com.yuluo.picture486ddd.domain.picture.repository.PictureRepository;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
+import com.yuluo.picture486ddd.infrastructure.adapter.AiDescription;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
@@ -38,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -722,6 +725,33 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         Picture picture = pictureRepository.getById(id);
         ThrowUtils.throwIf(picture == null, ErrorCode.NOT_FOUND_ERROR);
         return picture;
+    }
+
+    @Override
+    public String AiGenerateDescription(MultipartFile multipartFile) {
+        String filename = multipartFile.getOriginalFilename();
+        String tempPath = String.format("/temp/%s", filename);
+        File tempFile = null;
+        try {
+            //创建临时文件保存原始图片
+            tempFile = File.createTempFile("ai_temp_", "_" + filename);
+            multipartFile.transferTo(tempFile);
+            // 将处理后的图转换为base64
+            String base64Image = PictureUtil.convertLocalImageToBase64(tempFile);
+            // 将base64Image传递给AI服务
+            return AiDescription.callWithLocalFile(base64Image);
+        } catch (Exception e) {
+            log.error("AI图片描述生成失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI处理失败");
+        }finally{
+            if (tempFile != null) {
+                // 删除临时文件
+                boolean delete = tempFile.delete();
+                if (!delete) {
+                    log.error("file delete error, filepath = {}", tempPath);
+                }
+            }
+        }
     }
 
     @Override

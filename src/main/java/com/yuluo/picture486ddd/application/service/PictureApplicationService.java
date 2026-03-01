@@ -155,4 +155,6 @@ public interface PictureApplicationService extends IService<Picture> {
     void updatePicture(Picture picture, HttpServletRequest request);
 
     Picture getPictureById(long id);
+
+    String AiGenerateDescription(MultipartFile multipartFile);
 }
