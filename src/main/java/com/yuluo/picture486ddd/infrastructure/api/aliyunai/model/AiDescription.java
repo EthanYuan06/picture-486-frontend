@@ -1,4 +1,4 @@
-package com.yuluo.picture486ddd.infrastructure.adapter;
+package com.yuluo.picture486ddd.infrastructure.api.aliyunai.model;
 
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversation;
 import com.alibaba.dashscope.aigc.multimodalconversation.MultiModalConversationParam;
@@ -10,6 +10,7 @@ import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.exception.UploadFileException;
 import com.alibaba.dashscope.utils.Constants;
 import com.yuluo.picture486ddd.domain.constant.AiPrompt;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.util.Arrays;

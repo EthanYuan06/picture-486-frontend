@@ -84,9 +84,10 @@ public class PictureController {
     @PostMapping("/ai_generate_description")
     @Operation(summary = "AI生成图片简介")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
-    public BaseResponse<String> AiGenerateDescription(@RequestPart("file") MultipartFile multipartFile) {
-        return ResultUtils.success(pictureApplicationService.AiGenerateDescription(multipartFile));
-}
+    public BaseResponse<String> AiGenerateDescription(@RequestPart("file") MultipartFile multipartFile, HttpServletRequest request) {
+            String description = pictureApplicationService.AiGenerateDescription(multipartFile);
+            return ResultUtils.success(description);
+    }
 
     @PostMapping("/upload/cover")
     @Operation(summary = "上传相册封面")

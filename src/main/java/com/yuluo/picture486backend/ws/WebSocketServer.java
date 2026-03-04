@@ -58,7 +58,6 @@ public class WebSocketServer {
      */
     @OnMessage
     public void onMessage(String message, Session session, @PathParam("userId") Long userId) {
-        log.info("收到来自用户 {} 的消息: {}", userId, message);
         if ("PING".equalsIgnoreCase(message)) {
             try {
                 session.getBasicRemote().sendText("PONG");
