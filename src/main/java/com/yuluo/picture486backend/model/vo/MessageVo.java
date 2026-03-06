@@ -1,7 +1,7 @@
 package com.yuluo.picture486backend.model.vo;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.yuluo.picture486backend.model.entity.SysMessage;
+import com.yuluo.picture486ddd.domain.message.entity.SysMessage;
 import lombok.Data;
 
 import java.io.Serializable;

@@ -1,4 +1,4 @@
-package com.yuluo.picture486backend.service;
+package com.yuluo.picture486ddd.domain.message.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
@@ -9,23 +9,14 @@ import com.yuluo.picture486backend.model.vo.MessageVo;
 /**
  * 消息服务
  */
-public interface MessageService {
+public interface MessageDomainService {
 
     /**
-     * 发送消息给指定用户
-     *
-     * @param userId  接收用户ID
+     * 给指定用户发送消息
+     * @param userId 用户ID
      * @param message 消息内容
      */
     void sendMessage(Long userId, String message);
-
-    /**
-     * 批量发送消息
-     *
-     * @param messageSendRequest 消息发送请求
-     * @param loginUser          当前登录用户
-     */
-    void sendMessage(MessageSendRequest messageSendRequest, User loginUser);
 
     /**
      * 分页获取消息列表

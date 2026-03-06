@@ -1,4 +1,4 @@
-package com.yuluo.picture486backend.model.entity;
+package com.yuluo.picture486ddd.domain.message.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;

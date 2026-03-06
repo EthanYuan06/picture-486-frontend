@@ -1,9 +1,11 @@
 package com.yuluo.picture486ddd.application.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.StpKit;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.model.SpaceUserPermissionConstant;
@@ -42,6 +44,9 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
 
     @Resource
     private PictureDomainService pictureDomainService;
+
+    @Resource
+    private MessageDomainService messageDomainService;
 
     @Resource
     private UserApplicationService userApplicationService;
@@ -131,12 +136,20 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
     @Override
     public void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser) {
        pictureDomainService.doPictureReview(pictureReviewRequest, loginUser);
+        // WebSocket通知
+        Long userId = loginUser.getId();
+        String reviewMessage = pictureReviewRequest.getReviewMessage();
+        messageDomainService.sendMessage(userId, reviewMessage);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void doPictureReviewByBatch(PictureReviewByBatchRequest pictureReviewByBatchRequest, User loginUser) {
         pictureDomainService.doPictureReviewByBatch(pictureReviewByBatchRequest, loginUser);
+        // WebSocket通知
+        Long userId = loginUser.getId();
+        String reviewMessage = pictureReviewByBatchRequest.getReviewMessage();
+        messageDomainService.sendMessage(userId, reviewMessage);
     }
 
     @Override

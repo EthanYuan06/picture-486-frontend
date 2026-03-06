@@ -7,11 +7,10 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.qcloud.cos.model.PutObjectResult;
 import com.yuluo.picture486ddd.domain.picture.repository.PictureRepository;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
-import com.yuluo.picture486ddd.infrastructure.adapter.AiDescription;
+import com.yuluo.picture486ddd.infrastructure.api.aliyunai.model.AiDescription;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
@@ -28,7 +27,7 @@ import com.yuluo.picture486ddd.interfaces.dto.picture.*;
 import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import com.yuluo.picture486ddd.infrastructure.mapper.PictureMapper;
 import com.yuluo.picture486backend.service.SpaceService;
-import com.yuluo.picture486backend.service.MessageService;
+import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.infrastructure.utils.PictureUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -70,7 +69,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
     private TransactionTemplate transactionTemplate;
 
     @Resource
-    private MessageService messageService;
+    private MessageDomainService messageDomainService;
 
     @Resource
     private PictureRepository pictureRepository;
@@ -330,16 +329,6 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         updatePicture.setReviewTime(new Date());
         boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "操作失败");
-        // WebSocket通知
-        String reviewMsg = ObjUtil.defaultIfNull(updatePicture.getReviewMessage(), "无");
-        String message = null;
-        if (reviewStatusEnum != null) {
-            message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
-                    oldPicture.getId(),
-                    reviewStatusEnum.getText(),
-                    reviewMsg);
-        }
-        messageService.sendMessage(oldPicture.getUserId(), message);
     }
 
     @Override
@@ -384,7 +373,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
                         picture.getId(),
                         reviewStatusEnum.getText(),
                         reviewMsg);
-                messageService.sendMessage(picture.getUserId(), message);
+                messageDomainService.sendMessage(picture.getUserId(), message);
             }
         }
     }

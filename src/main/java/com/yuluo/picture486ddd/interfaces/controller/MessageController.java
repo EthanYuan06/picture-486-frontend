@@ -1,13 +1,15 @@
-package com.yuluo.picture486backend.controller;
+package com.yuluo.picture486ddd.interfaces.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuluo.picture486ddd.application.service.MessageApplicationService;
+import com.yuluo.picture486ddd.infrastructure.annotation.AuthCheck;
 import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
 import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
 import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
 import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.MessageVo;
-import com.yuluo.picture486backend.service.MessageService;
+import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,20 +21,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/message")
 public class MessageController {
-
     @Resource
-    private MessageService messageService;
-
-    @Resource
-    private UserApplicationService userApplicationService;
+    private MessageApplicationService messageApplicationService;
 
     /**
-     * 发送消息（仅管理员）
+     * 给指定用户发送消息（仅管理员）
      */
     @PostMapping("/send")
-    public BaseResponse<Boolean> sendMessage(@RequestBody MessageSendRequest messageSendRequest, HttpServletRequest request) {
-        User loginUser = userApplicationService.getLoginUser(request);
-        messageService.sendMessage(messageSendRequest, loginUser);
+    @AuthCheck(mustRole = "admin")
+    public BaseResponse<Boolean> sendMessage(@RequestBody MessageSendRequest messageSendRequest) {
+        messageApplicationService.sendMessage(messageSendRequest);
         return ResultUtils.success(true);
     }
 
@@ -40,10 +38,9 @@ public class MessageController {
      * 分页获取消息列表
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<MessageVo>> listMessageVoByPage(@RequestBody MessageQueryRequest messageQueryRequest, HttpServletRequest request) {
-        User loginUser = userApplicationService.getLoginUser(request);
-        Page<MessageVo> messageVoPage = messageService.listMessageVoByPage(messageQueryRequest, loginUser);
-        return ResultUtils.success(messageVoPage);
+    public BaseResponse<Page<MessageVo>> listMessageVoByPage(
+            @RequestBody MessageQueryRequest messageQueryRequest, HttpServletRequest request) {
+        return ResultUtils.success(messageApplicationService.listMessageVoByPage(messageQueryRequest, request));
     }
 
     /**
@@ -51,9 +48,7 @@ public class MessageController {
      */
     @GetMapping("/unread/count")
     public BaseResponse<Long> getUnreadMessageCount(HttpServletRequest request) {
-        User loginUser = userApplicationService.getLoginUser(request);
-        long count = messageService.getUnreadMessageCount(loginUser);
-        return ResultUtils.success(count);
+        return ResultUtils.success(messageApplicationService.getUnreadMessageCount(request));
     }
 
     /**
@@ -61,9 +56,7 @@ public class MessageController {
      */
     @GetMapping("/read")
     public BaseResponse<Boolean> readMessage(Long id, HttpServletRequest request) {
-        User loginUser = userApplicationService.getLoginUser(request);
-        boolean result = messageService.readMessage(id, loginUser);
-        return ResultUtils.success(result);
+        return ResultUtils.success(messageApplicationService.readMessage(id, request));
     }
 
     /**
@@ -71,8 +64,6 @@ public class MessageController {
      */
     @GetMapping("/read/all")
     public BaseResponse<Boolean> readAllMessage(HttpServletRequest request) {
-        User loginUser = userApplicationService.getLoginUser(request);
-        boolean result = messageService.readAllMessage(loginUser);
-        return ResultUtils.success(result);
+        return ResultUtils.success(messageApplicationService.readAllMessage(request));
     }
 }

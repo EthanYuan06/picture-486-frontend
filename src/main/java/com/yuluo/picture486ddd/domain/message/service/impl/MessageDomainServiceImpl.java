@@ -1,20 +1,19 @@
-package com.yuluo.picture486backend.service.impl;
+package com.yuluo.picture486ddd.domain.message.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuluo.picture486ddd.domain.message.repository.MessageRepository;
+import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486ddd.infrastructure.mapper.SysMessageMapper;
 import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
 import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
-import com.yuluo.picture486backend.model.entity.SysMessage;
+import com.yuluo.picture486ddd.domain.message.entity.SysMessage;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.MessageVo;
-import com.yuluo.picture486backend.service.MessageService;
-import com.yuluo.picture486ddd.application.service.UserApplicationService;
-import com.yuluo.picture486backend.ws.WebSocketServer;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,51 +25,22 @@ import java.util.List;
  */
 @Service
 @Slf4j
-public class MessageServiceImpl implements MessageService {
-
+public class MessageDomainServiceImpl implements MessageDomainService {
     @Resource
-    private UserApplicationService userApplicationService;
-
+    private MessageRepository messageRepository;
     @Resource
     private SysMessageMapper sysMessageMapper;
 
     @Override
     public void sendMessage(Long userId, String message) {
-        if (userId == null || StrUtil.isBlank(message)) {
-            return;
-        }
-
-        // 1. 无论用户是否在线，先持久化消息到数据库
+        // 无论用户是否在线，先持久化消息到数据库
         SysMessage sysMessage = new SysMessage();
         sysMessage.setReceiveUserId(userId);
         sysMessage.setTitle("系统通知"); // 默认标题
         sysMessage.setContent(message);
         sysMessage.setType(0); // 0-系统消息
         sysMessage.setStatus(0); // 0-未读
-        sysMessageMapper.insert(sysMessage);
-
-        // 2. 调用 WebSocket 服务端发送消息（如果用户在线，会收到推送；如果不在线，则仅入库）
-        WebSocketServer.sendMessage(userId, message);
-    }
-
-    @Override
-    public void sendMessage(MessageSendRequest messageSendRequest, User loginUser) {
-        // 校验参数
-        if (messageSendRequest == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        Long userId = messageSendRequest.getUserId();
-        String message = messageSendRequest.getMessage();
-        ThrowUtils.throwIf(userId == null || StrUtil.isBlank(message), ErrorCode.PARAMS_ERROR, "接收用户ID或消息内容不能为空");
-        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
-
-        // 仅管理员可直接调用发送接口（例如测试或系统通知）
-        if (!User.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限发送消息");
-        }
-
-        // 发送消息
-        sendMessage(userId, message);
+        messageRepository.insert(sysMessage);
     }
 
     @Override
@@ -93,7 +63,7 @@ public class MessageServiceImpl implements MessageService {
         // 按时间倒序
         queryWrapper.orderByDesc("createTime");
         
-        Page<SysMessage> sysMessagePage = sysMessageMapper.selectPage(new Page<>(current, size), queryWrapper);
+        Page<SysMessage> sysMessagePage = messageRepository.selectPage(new Page<>(current, size), queryWrapper);
         List<SysMessage> records = sysMessagePage.getRecords();
         if (records == null || records.isEmpty()) {
             return new Page<>(current, size, 0);
@@ -113,7 +83,7 @@ public class MessageServiceImpl implements MessageService {
         QueryWrapper<SysMessage> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", loginUser.getId());
         queryWrapper.eq("status", 0); // 未读
-        return sysMessageMapper.selectCount(queryWrapper);
+        return messageRepository.selectCount(queryWrapper);
     }
 
     @Override
@@ -131,7 +101,7 @@ public class MessageServiceImpl implements MessageService {
         }
         // 更新状态
         sysMessage.setStatus(1); // 已读
-        return sysMessageMapper.updateById(sysMessage) > 0;
+        return messageRepository.updateById(sysMessage) > 0;
     }
 
     @Override
@@ -145,6 +115,6 @@ public class MessageServiceImpl implements MessageService {
         QueryWrapper<SysMessage> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", loginUser.getId());
         queryWrapper.eq("status", 0); // 仅更新未读的
-        return sysMessageMapper.update(sysMessage, queryWrapper) > 0;
+        return messageRepository.update(sysMessage, queryWrapper) > 0;
     }
 }

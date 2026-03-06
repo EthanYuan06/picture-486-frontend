@@ -1,4 +1,4 @@
-package com.yuluo.picture486backend.ws;
+package com.yuluo.picture486ddd.infrastructure.websocket;
 
 import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
