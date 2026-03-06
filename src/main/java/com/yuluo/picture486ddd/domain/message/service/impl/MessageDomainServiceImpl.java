@@ -1,6 +1,5 @@
 package com.yuluo.picture486ddd.domain.message.service.impl;
 
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuluo.picture486ddd.domain.message.repository.MessageRepository;
@@ -10,7 +9,6 @@ import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486ddd.infrastructure.mapper.SysMessageMapper;
 import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
-import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
 import com.yuluo.picture486ddd.domain.message.entity.SysMessage;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486backend.model.vo.MessageVo;

@@ -57,8 +57,8 @@ public class MessageVo implements Serializable {
     /**
      * 包装类转对象
      *
-     * @param sysMessage
-     * @return
+     * @param sysMessage 消息对象
+     * @return 消息对象
      */
     public static MessageVo objToVo(SysMessage sysMessage) {
         if (sysMessage == null) {

@@ -366,15 +366,13 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         boolean result = this.updateBatchById(updatePictureList);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量审核失败");
         // WebSocket通知
-        if (result) {
-            String reviewMsg = ObjUtil.defaultIfNull(reviewMessage, "无");
-            for (Picture picture : reviewPictureList) {
-                String message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
-                        picture.getId(),
-                        reviewStatusEnum.getText(),
-                        reviewMsg);
-                messageDomainService.sendMessage(picture.getUserId(), message);
-            }
+        String reviewMsg = ObjUtil.defaultIfNull(reviewMessage, "无");
+        for (Picture picture : reviewPictureList) {
+            String message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
+                    picture.getId(),
+                    reviewStatusEnum.getText(),
+                    reviewMsg);
+            messageDomainService.sendMessage(picture.getUserId(), message);
         }
     }
 
@@ -664,7 +662,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
 //        //批量删除计时结束
 //        long endTime = System.currentTimeMillis();
 //        log.info("批量删除图片完成，图片数量: {}，耗时: {} ms", pictureIds.size(), (endTime - startTime));
-        return result;
+        return true;
     }
 
     @Override

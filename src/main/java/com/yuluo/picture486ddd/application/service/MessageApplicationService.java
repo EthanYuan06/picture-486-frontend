@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
 import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
 import com.yuluo.picture486backend.model.vo.MessageVo;
-import com.yuluo.picture486ddd.domain.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
