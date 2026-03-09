@@ -1,9 +1,17 @@
 package com.yuluo.picture486ddd.domain.space.entity;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import com.yuluo.picture486backend.SpaceConstant;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceLevelEnum;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceTypeEnum;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
+import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import lombok.Data;
 
 /**
@@ -91,4 +99,49 @@ public class Space implements Serializable {
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
+
+    public void fillDefaultSpace() {
+        //设置默认相册名称、等级以及相册类型
+        if (StrUtil.isBlank(this.getSpaceName())) {
+            this.setSpaceName(SpaceConstant.DEFAULT_SPACE_NAME);
+        }
+        if (this.getSpaceLevel() == null) {
+            this.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+        }
+        if (this.getSpaceType() == null) {
+            this.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
+        }
+    }
+
+    public void validSpace(boolean isAdd) {
+        //从对象中取值
+        String spaceName = this.getSpaceName();
+        Integer spaceLevel = this.getSpaceLevel();
+        SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
+        Integer spaceType = this.getSpaceType();
+        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
+        //判断是否是创建相册
+        if (isAdd) {
+            if (StrUtil.isBlank(spaceName)) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册名不能为空");
+            }
+            if (spaceLevel == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册等级不能为空");
+            }
+            if (spaceType == null) {
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册类型不能为空");
+            }
+        }
+        //修改数据时，更改相册级别时的判定
+        if (spaceLevel != null && spaceLevelEnum == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册等级不存在");
+        }
+        if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 24) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册名称过长");
+        }
+        if (spaceType != null && spaceTypeEnum == null) {
+            //随意输入一个数字绕过spaceType != null也不能绕过spaceTypeEnum == null的结果
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册类型不存在");
+        }
+    }
 }

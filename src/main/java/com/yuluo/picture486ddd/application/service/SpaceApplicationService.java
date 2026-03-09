@@ -10,7 +10,7 @@ import com.yuluo.picture486ddd.interfaces.dto.space.SpaceQueryRequest;
 import com.yuluo.picture486ddd.interfaces.vo.space.SpaceVo;
 import jakarta.servlet.http.HttpServletRequest;
 
-public interface SpaceAppliacationService extends IService<Space> {
+public interface SpaceApplicationService extends IService<Space> {
 
     /**
      * 创建相册
@@ -20,14 +20,6 @@ public interface SpaceAppliacationService extends IService<Space> {
      * @return 相册ID
      */
     long addSpace(SpaceAddRequest spaceAddRequest, User loginUser);
-
-    /**
-     * 校验相册信息
-     *
-     * @param space 相册
-     * @param isAdd   判断是否是创建相册
-     */
-    void validSpace(Space space, boolean isAdd);
 
     /**
      * 获取查询条件

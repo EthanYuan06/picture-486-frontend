@@ -2,8 +2,10 @@ package com.yuluo.picture486ddd.application.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.yuluo.picture486backend.model.dto.space_user.SpaceUserAddRequest;
-import com.yuluo.picture486backend.model.dto.space_user.SpaceUserQueryRequest;
+import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
+import com.yuluo.picture486ddd.interfaces.dto.space_user.SpaceUserAddRequest;
+import com.yuluo.picture486ddd.interfaces.dto.space_user.SpaceUserEditRequest;
+import com.yuluo.picture486ddd.interfaces.dto.space_user.SpaceUserQueryRequest;
 import com.yuluo.picture486ddd.domain.space.entity.SpaceUser;
 import com.yuluo.picture486ddd.interfaces.vo.space.SpaceUserVo;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +24,13 @@ public interface SpaceUserApplicationService extends IService<SpaceUser> {
      */
     long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest);
 
+    /**
+     * 删除相册成员
+     *
+     * @param deleteRequest 删除请求
+     * @return 是否删除成功
+     */
+    boolean deleteSpaceUser(DeleteRequest deleteRequest);
     /**
      * 校验相册成员
      *
@@ -55,25 +64,25 @@ public interface SpaceUserApplicationService extends IService<SpaceUser> {
      */
     List<SpaceUserVo> getSpaceUserVoList(List<SpaceUser> spaceUserList);
 
+    /**
+     * 获取相册成员列表
+     *
+     * @param spaceUserQueryRequest 获取相册成员列表请求
+     * @return 相册成员列表
+     */
+    List<SpaceUser> listSpaceUser(SpaceUserQueryRequest spaceUserQueryRequest);
 
+    /**
+     * 编辑相册成员
+     *
+     * @param spaceUserEditRequest 编辑相册成员请求
+     */
+    void editSpaceUser(SpaceUserEditRequest spaceUserEditRequest);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * 查询我加入的团队空间列表
+     *
+     * @param request 请求
+     */
+    List<SpaceUser> listMyTeamSpace(HttpServletRequest request);
 }

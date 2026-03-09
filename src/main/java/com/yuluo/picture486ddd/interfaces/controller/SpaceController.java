@@ -1,6 +1,7 @@
 package com.yuluo.picture486ddd.interfaces.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.yuluo.picture486ddd.application.service.SpaceApplicationService;
 import com.yuluo.picture486ddd.domain.space.service.SpaceUserDomainService;
 import com.yuluo.picture486ddd.infrastructure.annotation.AuthCheck;
 import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
@@ -16,7 +17,6 @@ import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.domain.space.valueobject.SpaceLevelEnum;
 import com.yuluo.picture486ddd.interfaces.vo.space.SpaceVo;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
-import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.interfaces.dto.space.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public class SpaceController {
 
     @Resource
-    private SpaceDomainService spaceDomainService;
+    private SpaceApplicationService spaceApplicationService;
 
     @Resource
     private SpaceUserDomainService spaceUserDomainService;
@@ -60,7 +60,7 @@ public class SpaceController {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userApplicationService.getLoginUser(request);
-        return ResultUtils.success(spaceDomainService.addSpace(spaceAddRequest, loginUser));
+        return ResultUtils.success(spaceApplicationService.addSpace(spaceAddRequest, loginUser));
     }
 
     @PostMapping("/delete")
@@ -72,10 +72,10 @@ public class SpaceController {
         User loginUser = userApplicationService.getLoginUser(request);
         Long spaceId = deleteRequest.getId();
         //判断相册是否存在
-        Space oldSpace = spaceDomainService.getById(spaceId);
+        Space oldSpace = spaceApplicationService.getById(spaceId);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         //仅本人或管理员可删除
-        spaceDomainService.checkSpaceAuth(oldSpace, loginUser);
+        spaceApplicationService.checkSpaceAuth(oldSpace, loginUser);
         //判断用户是否输入了确认删除的信息，管理员不需要输入确认文本
         if (!User.isAdmin(loginUser)){
             ThrowUtils.throwIf(deleteRequest.getDelConfirmInfo() == null, ErrorCode.PARAMS_ERROR, "请输入确认删除文本");
@@ -88,7 +88,7 @@ public class SpaceController {
         Boolean isDelPictures = pictureDomainService.deletePictures(pictureIdsToDel, loginUser);
         ThrowUtils.throwIf(!isDelPictures, ErrorCode.OPERATION_ERROR, "删除相册所有图片失败");
         //操作数据库删除相册
-        boolean isDelSpace = spaceDomainService.removeById(spaceId);
+        boolean isDelSpace = spaceApplicationService.removeById(spaceId);
         ThrowUtils.throwIf(!isDelSpace, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -104,15 +104,15 @@ public class SpaceController {
         Space space = new Space();
         BeanUtils.copyProperties(spaceUpdateRequest, space);
         //填充数据
-        spaceDomainService.fillSpaceBySpaceLevel(space);
+        spaceApplicationService.fillSpaceBySpaceLevel(space);
         //数据校验
-        spaceDomainService.validSpace(space,false);
+        spaceApplicationService.validSpace(space, false);
         //判断相册是否存在
         Long id = spaceUpdateRequest.getId();
-        Space oldSpace = spaceDomainService.getById(id);
+        Space oldSpace = spaceApplicationService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         //操作数据库
-        boolean result = spaceDomainService.updateById(space);
+        boolean result = spaceApplicationService.updateById(space);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }
@@ -123,7 +123,7 @@ public class SpaceController {
     public BaseResponse<Space> getSpaceById(long id) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         //查询数据库
-        Space space = spaceDomainService.getById(id);
+        Space space = spaceApplicationService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
         return ResultUtils.success(space);
     }
@@ -133,10 +133,10 @@ public class SpaceController {
     public BaseResponse<SpaceVo> getSpaceVoById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         //查询数据库
-        Space space = spaceDomainService.getById(id);
+        Space space = spaceApplicationService.getById(id);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
         User loginUser = userApplicationService.getLoginUser(request);
-        SpaceVo spaceVo = spaceDomainService.getSpaceVo(space, request);
+        SpaceVo spaceVo = spaceApplicationService.getSpaceVo(space, request);
         List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
         spaceVo.setPermissionList(permissionList);
         return ResultUtils.success(spaceVo);
@@ -150,8 +150,8 @@ public class SpaceController {
         long size = spaceQueryRequest.getPageSize();
 
         //查询数据库
-        Page<Space> spacePage = spaceDomainService.page(new Page<>(current, size),
-                spaceDomainService.getQueryWrapper(spaceQueryRequest));
+        Page<Space> spacePage = spaceApplicationService.page(new Page<>(current, size),
+                spaceApplicationService.getQueryWrapper(spaceQueryRequest));
 
         return ResultUtils.success(spacePage);
     }
@@ -163,8 +163,8 @@ public class SpaceController {
         long size = spaceQueryRequest.getPageSize();
         
         //查询数据库
-        Page<Space> spacePage = spaceDomainService.page(new Page<>(current, size), spaceDomainService.getQueryWrapper(spaceQueryRequest));
-        Page<SpaceVo> spaceVoPage = spaceDomainService.getSpaceVoPage(spacePage, request);
+        Page<Space> spacePage = spaceApplicationService.page(new Page<>(current, size), spaceApplicationService.getQueryWrapper(spaceQueryRequest));
+        Page<SpaceVo> spaceVoPage = spaceApplicationService.getSpaceVoPage(spacePage, request);
 
         return ResultUtils.success(spaceVoPage);
     }
@@ -179,20 +179,20 @@ public class SpaceController {
         Space space = new Space();
         BeanUtils.copyProperties(spaceEditRequest, space);
         //填充数据
-        spaceDomainService.fillSpaceBySpaceLevel(space);
+        spaceApplicationService.fillSpaceBySpaceLevel(space);
         //设置编辑时间
         space.setEditTime(new Date());
         //数据校验
-        spaceDomainService.validSpace(space, false);
+        spaceApplicationService.validSpace(space, false);
         User loginUser = userApplicationService.getLoginUser(request);
         //判断相册是否存在
         Long id = spaceEditRequest.getId();
-        Space oldSpace = spaceDomainService.getById(id);
+        Space oldSpace = spaceApplicationService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
         //仅本人或管理员可编辑
-        spaceDomainService.checkSpaceAuth(oldSpace, loginUser);
+        spaceApplicationService.checkSpaceAuth(oldSpace, loginUser);
         //操作数据库
-        boolean result = spaceDomainService.updateById(space);
+        boolean result = spaceApplicationService.updateById(space);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return ResultUtils.success(true);
     }

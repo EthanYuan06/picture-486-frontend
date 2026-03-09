@@ -1,4 +1,4 @@
-package com.yuluo.picture486backend.controller;
+package com.yuluo.picture486ddd.interfaces.controller;
 
 import com.yuluo.picture486backend.model.vo.space.analyze.*;
 import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;

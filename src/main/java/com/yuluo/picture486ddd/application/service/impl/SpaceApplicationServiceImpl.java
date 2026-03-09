@@ -2,17 +2,16 @@ package com.yuluo.picture486ddd.application.service.impl;
 
 
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ObjUtil;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486backend.SpaceConstant;
+import com.yuluo.picture486ddd.application.service.SpaceApplicationService;
+import com.yuluo.picture486ddd.application.service.SpaceUserApplicationService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.domain.space.entity.Space;
 import com.yuluo.picture486ddd.domain.space.entity.SpaceUser;
 import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
-import com.yuluo.picture486ddd.domain.space.service.SpaceUserDomainService;
 import com.yuluo.picture486ddd.domain.space.valueobject.SpaceLevelEnum;
 import com.yuluo.picture486ddd.domain.space.valueobject.SpaceRoleEnum;
 import com.yuluo.picture486ddd.domain.space.valueobject.SpaceTypeEnum;
@@ -46,13 +45,16 @@ import java.util.stream.Collectors;
 */
 @Service
 public class SpaceApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space>
-    implements SpaceDomainService {
+        implements SpaceApplicationService {
 
     @Resource
     private UserApplicationService userApplicationService;
 
     @Resource
-    private SpaceUserDomainService spaceUserDomainService;
+    private SpaceUserApplicationService spaceUserApplicationService;
+
+    @Resource
+    private SpaceDomainService spaceDomainService;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -69,21 +71,12 @@ public class SpaceApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space>
         //dto转实体类
         Space space = new Space();
         BeanUtils.copyProperties(spaceAddRequest, space);
-        //设置默认相册名称、等级以及相册类型
-        if (StrUtil.isBlank(spaceAddRequest.getSpaceName())){
-            space.setSpaceName(SpaceConstant.DEFAULT_SPACE_NAME);
-        }
-        if (spaceAddRequest.getSpaceLevel() == null){
-            space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
-        }
-        if (spaceAddRequest.getSpaceType() == null){
-            space.setSpaceType(SpaceTypeEnum.PRIVATE.getValue());
-        }
         //设置默认限额与封面
+        space.fillDefaultSpace();
         this.fillSpaceBySpaceLevel(space);
         space.setSpaceCover(SpaceConstant.DEFAULT_SPACE_COVER);
         //数据校验
-        this.validSpace(space, true);
+        space.validSpace(true);
         Long userId = loginUser.getId();
         //校验权限，不允许非管理员创建默认级别以上的相册
         if (!User.isAdmin(loginUser) && space.getSpaceLevel() != SpaceLevelEnum.COMMON.getValue()){
@@ -133,7 +126,7 @@ public class SpaceApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     spaceUser.setSpaceId(space.getId());
                     spaceUser.setUserId(userId);
                     spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
-                    boolean result = spaceUserDomainService.save(spaceUser);
+                    boolean result = spaceUserApplicationService.save(spaceUser);
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
                 dynamicShardingManager.createSpacePictureTable(space);
@@ -151,66 +144,11 @@ public class SpaceApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space>
         }
     }
 
-    @Override
-    public void validSpace(Space space, boolean isAdd) {
-        ThrowUtils.throwIf(space == null, ErrorCode.PARAMS_ERROR);
-        //从对象中取值
-        String spaceName = space.getSpaceName();
-        Integer spaceLevel = space.getSpaceLevel();
-        SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
-        Integer spaceType = space.getSpaceType();
-        SpaceTypeEnum spaceTypeEnum = SpaceTypeEnum.getEnumByValue(spaceType);
-        //判断是否是创建相册
-        if (isAdd) {
-            if (StrUtil.isBlank(spaceName)) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册名不能为空");
-            }
-            if (spaceLevel == null) {
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册等级不能为空");
-            }
-            if(spaceType == null){
-                throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册类型不能为空");
-            }
-        }
-        //修改数据时，更改相册级别时的判定
-        if (spaceLevel != null && spaceLevelEnum == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册等级不存在");
-        }
-        if (StrUtil.isNotBlank(spaceName) && spaceName.length() > 24) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册名称过长");
-        }
-        if(spaceType != null && spaceTypeEnum == null){
-            //随意输入一个数字绕过spaceType != null也不能绕过spaceTypeEnum == null的结果
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "相册类型不存在");
-        }
-    }
+
 
     @Override
     public QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest) {
-        //创建查询条件
-        QueryWrapper<Space> queryWrapper = new QueryWrapper<>();
-        if (spaceQueryRequest == null) {
-            return queryWrapper;
-        }
-        //从对象中获取参数
-        Long id = spaceQueryRequest.getId();
-        Long userId = spaceQueryRequest.getUserId();
-        String spaceName = spaceQueryRequest.getSpaceName();
-        Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
-        Integer spaceType = spaceQueryRequest.getSpaceType();
-        String sortField = spaceQueryRequest.getSortField();
-        String sortOrder = spaceQueryRequest.getSortOrder();
-
-        //定义查询条件
-        queryWrapper.eq(ObjUtil.isNotEmpty(id), "id", id);
-        queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
-        queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel), "spaceLevel", spaceLevel);
-        queryWrapper.eq(ObjUtil.isNotEmpty(spaceType), "spaceType", spaceType);
-        queryWrapper.like(StrUtil.isNotBlank(spaceName), "spaceName", spaceName);
-        
-        //排序
-        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
-        return queryWrapper;
+        return spaceDomainService.getQueryWrapper(spaceQueryRequest);
     }
 
     @Override
@@ -257,32 +195,12 @@ public class SpaceApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Override
     public void fillSpaceBySpaceLevel(Space space) {
-        //获取相册级别
-        Integer spaceLevel = space.getSpaceLevel();
-        SpaceLevelEnum spaceLevelEnum = SpaceLevelEnum.getEnumByValue(spaceLevel);
-        //根据相册级别填充限额
-        if (spaceLevelEnum != null){
-            //获取容量限额
-            long maxSize = spaceLevelEnum.getMaxSize();
-            //管理员未指定时，使用默认值
-            if (space.getMaxSize() == null){
-                space.setMaxSize(maxSize);
-            }
-            //获取数量限额
-            long maxCount = spaceLevelEnum.getMaxCount();
-            //管理员未指定时，使用默认值
-            if (space.getMaxCount() == null){
-                space.setMaxCount(maxCount);
-            }
-        }
+        spaceDomainService.fillSpaceBySpaceLevel(space);
     }
 
     @Override
     public void checkSpaceAuth(Space space, User loginUser) {
-        //仅相册创建人或管理员可操作
-        if (!space.getUserId().equals(loginUser.getId()) && !User.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
+        spaceDomainService.checkSpaceAuth(space, loginUser);
     }
 }
 

@@ -3,8 +3,12 @@ package com.yuluo.picture486ddd.application.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.yuluo.picture486backend.model.dto.space_user.SpaceUserAddRequest;
-import com.yuluo.picture486backend.model.dto.space_user.SpaceUserQueryRequest;
+import com.yuluo.picture486ddd.application.service.SpaceApplicationService;
+import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
+import com.yuluo.picture486ddd.interfaces.assembler.SpaceUserAssembler;
+import com.yuluo.picture486ddd.interfaces.dto.space_user.SpaceUserAddRequest;
+import com.yuluo.picture486ddd.interfaces.dto.space_user.SpaceUserEditRequest;
+import com.yuluo.picture486ddd.interfaces.dto.space_user.SpaceUserQueryRequest;
 import com.yuluo.picture486ddd.application.service.SpaceUserApplicationService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.domain.space.entity.Space;
@@ -23,6 +27,7 @@ import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +55,9 @@ public class SpaceUserApplicationServiceImpl extends ServiceImpl<SpaceUserMapper
     @Lazy
     private SpaceUserDomainService spaceUserDomainService;
 
+    @Resource
+    private SpaceApplicationService spaceApplicationService;
+
     @Override
     public long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest) {
         ThrowUtils.throwIf(spaceUserAddRequest == null, ErrorCode.PARAMS_ERROR);
@@ -60,6 +68,21 @@ public class SpaceUserApplicationServiceImpl extends ServiceImpl<SpaceUserMapper
         boolean result = this.save(spaceUser);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
         return spaceUser.getId();
+    }
+
+    @Override
+    public boolean deleteSpaceUser(DeleteRequest deleteRequest) {
+        if (deleteRequest == null || deleteRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = deleteRequest.getId();
+        //判断是否存在
+        SpaceUser oldSpaceUser = spaceUserDomainService.getById(id);
+        ThrowUtils.throwIf(oldSpaceUser == null, ErrorCode.NOT_FOUND_ERROR);
+        //删除
+        boolean result = spaceUserDomainService.removeById(id);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+        return true;
     }
 
     @Override
@@ -106,8 +129,8 @@ public class SpaceUserApplicationServiceImpl extends ServiceImpl<SpaceUserMapper
         //关联查询相册信息
         Long spaceId = spaceUser.getSpaceId();
         if (spaceId != null && spaceId > 0){
-            Space space = spaceDomainService.getById(spaceId);
-            SpaceVo spaceVo = spaceDomainService.getSpaceVo(space, request);
+            Space space = spaceApplicationService.getById(spaceId);
+            SpaceVo spaceVo = spaceApplicationService.getSpaceVo(space, request);
             spaceUserVo.setSpace(spaceVo);
         }
         return spaceUserVo;
@@ -145,6 +168,25 @@ public class SpaceUserApplicationServiceImpl extends ServiceImpl<SpaceUserMapper
             spaceUserVo.setSpace(SpaceVo.objToVo(space));
         });
         return spaceUserVoList;
+    }
+
+    @Override
+    public List<SpaceUser> listSpaceUser(SpaceUserQueryRequest spaceUserQueryRequest) {
+        ThrowUtils.throwIf(spaceUserQueryRequest == null, ErrorCode.PARAMS_ERROR);
+        return this.list(spaceUserDomainService.getQueryWrapper(spaceUserQueryRequest));
+    }
+
+    @Override
+    public void editSpaceUser(SpaceUserEditRequest spaceUserEditRequest) {
+        spaceUserDomainService.editSpaceUser(spaceUserEditRequest);
+    }
+
+    @Override
+    public List<SpaceUser> listMyTeamSpace(HttpServletRequest request) {
+        User loginUser = userApplicationService.getLoginUser(request);
+        SpaceUserQueryRequest spaceUserQueryRequest = new SpaceUserQueryRequest();
+        spaceUserQueryRequest.setUserId(loginUser.getId());
+        return this.list(this.getQueryWrapper(spaceUserQueryRequest));
     }
 }
 

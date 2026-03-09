@@ -1,4 +1,4 @@
-package com.yuluo.picture486backend.model.dto.space_user;
+package com.yuluo.picture486ddd.interfaces.dto.space_user;
 
 import lombok.Data;
 

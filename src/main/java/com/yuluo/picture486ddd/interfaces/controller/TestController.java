@@ -1,5 +1,6 @@
 package com.yuluo.picture486ddd.interfaces.controller;
 
+import com.yuluo.picture486ddd.application.service.SpaceApplicationService;
 import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
 import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
@@ -33,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class TestController {
 
     @Resource
-    private SpaceDomainService spaceDomainService;
+    private SpaceApplicationService spaceApplicationService;
 
     /**
      * 并发测试接口 - 用于验证Redisson分布式锁是否正常工作
@@ -74,7 +75,7 @@ public class TestController {
                         startLatch.await(); // 等待统一启动
                         
                         // 调用创建空间的方法
-                        long spaceId = spaceDomainService.addSpace(spaceAddRequest, mockUser);
+                        long spaceId = spaceApplicationService.addSpace(spaceAddRequest, mockUser);
                         
                         synchronized (successCount) {
                             successCount[0]++;
@@ -181,7 +182,7 @@ public class TestController {
                         Thread.sleep((long) (Math.random() * 10));
                         
                         // 调用创建空间的方法
-                        long spaceId = spaceDomainService.addSpace(spaceAddRequest, mockUser);
+                        long spaceId = spaceApplicationService.addSpace(spaceAddRequest, mockUser);
                         
                         synchronized (successCount) {
                             successCount[0]++;
