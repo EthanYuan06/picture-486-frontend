@@ -1,45 +1,25 @@
 package com.yuluo.picture486ddd.domain.space.service.impl;
 
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.yuluo.picture486backend.SpaceConstant;
+import com.yuluo.picture486ddd.domain.space.repository.SpaceRepository;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
-import com.yuluo.picture486ddd.infrastructure.manager.sharding.DynamicShardingManager;
-import com.yuluo.picture486ddd.interfaces.dto.space.SpaceAddRequest;
+import com.yuluo.picture486ddd.interfaces.assembler.SpaceAssembler;
 import com.yuluo.picture486ddd.interfaces.dto.space.SpaceQueryRequest;
 import com.yuluo.picture486ddd.domain.space.entity.Space;
-import com.yuluo.picture486ddd.domain.space.entity.SpaceUser;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.domain.space.valueobject.SpaceLevelEnum;
-import com.yuluo.picture486ddd.domain.space.valueobject.SpaceRoleEnum;
-import com.yuluo.picture486ddd.domain.space.valueobject.SpaceTypeEnum;
-import com.yuluo.picture486ddd.interfaces.vo.space.SpaceVo;
-import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
+import com.yuluo.picture486ddd.interfaces.dto.space.SpaceUpdateRequest;
 import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.infrastructure.mapper.SpaceMapper;
-import com.yuluo.picture486ddd.domain.space.service.SpaceUserDomainService;
-import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
-import org.springframework.beans.BeanUtils;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
 * @author 东山羽洛
@@ -47,6 +27,8 @@ import java.util.stream.Collectors;
 @Service
 public class SpaceDomainServiceImpl extends ServiceImpl<SpaceMapper, Space>
     implements SpaceDomainService {
+    @Resource
+    private SpaceRepository spaceRepository;
     @Override
     public QueryWrapper<Space> getQueryWrapper(SpaceQueryRequest spaceQueryRequest) {
         //创建查询条件
@@ -104,6 +86,46 @@ public class SpaceDomainServiceImpl extends ServiceImpl<SpaceMapper, Space>
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
     }
+
+    @Override
+    public void updateSpace(SpaceUpdateRequest spaceUpdateRequest) {
+        if (spaceUpdateRequest == null || spaceUpdateRequest.getId() <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //将实体类和DTO进行转换
+        Space space = SpaceAssembler.toSpaceEntity(spaceUpdateRequest);
+        //填充数据
+        this.fillSpaceBySpaceLevel(space);
+        //数据校验
+        space.validSpace(false);
+        //判断相册是否存在
+        Long id = spaceUpdateRequest.getId();
+        Space oldSpace = spaceRepository.getById(id);
+        ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR);
+        //操作数据库
+        boolean result = spaceRepository.updateById(space);
+        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
+    }
+
+    @Override
+    public Space getSpaceById(long id) {
+        ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
+        //查询数据库
+        Space space = spaceRepository.getById(id);
+        ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR);
+        return space;
+    }
+
+    @Override
+    public Page<Space> listSpaceByPage(SpaceQueryRequest spaceQueryRequest) {
+        long current = spaceQueryRequest.getCurrent();
+        long size = spaceQueryRequest.getPageSize();
+        //查询数据库
+        return this.page(
+                new Page<>(current, size),
+                this.getQueryWrapper(spaceQueryRequest));
+    }
+
 }
 
 
