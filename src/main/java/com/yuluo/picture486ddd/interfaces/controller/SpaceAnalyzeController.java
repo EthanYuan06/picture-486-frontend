@@ -1,15 +1,15 @@
 package com.yuluo.picture486ddd.interfaces.controller;
 
-import com.yuluo.picture486backend.model.vo.space.analyze.*;
 import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
 import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
-import com.yuluo.picture486backend.model.dto.space.analyze.*;
 import com.yuluo.picture486ddd.domain.space.entity.Space;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.application.service.SpaceAnalyzeApplicationService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
+import com.yuluo.picture486ddd.interfaces.dto.space.analyze.*;
+import com.yuluo.picture486ddd.interfaces.vo.space.analyze.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;

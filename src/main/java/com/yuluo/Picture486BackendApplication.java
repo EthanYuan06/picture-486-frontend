@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.scheduling.annotation.EnableAsync;
 
-@SpringBootApplication(scanBasePackages = {"com.yuluo.picture486backend", "com.yuluo.picture486ddd"})
+@SpringBootApplication(scanBasePackages = {"com.yuluo.picture486ddd"})
 @MapperScan("com.yuluo.picture486ddd.infrastructure.mapper")
 @EnableAsync
 @EnableAspectJAutoProxy(exposeProxy = true)

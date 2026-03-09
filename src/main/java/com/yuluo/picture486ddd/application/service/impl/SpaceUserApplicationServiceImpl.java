@@ -56,6 +56,7 @@ public class SpaceUserApplicationServiceImpl extends ServiceImpl<SpaceUserMapper
     private SpaceUserDomainService spaceUserDomainService;
 
     @Resource
+    @Lazy
     private SpaceApplicationService spaceApplicationService;
 
     @Override

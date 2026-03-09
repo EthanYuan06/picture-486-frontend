@@ -6,12 +6,11 @@ import com.baomidou.mybatisplus.annotation.*;
 import java.io.Serializable;
 import java.util.Date;
 
-import com.yuluo.picture486backend.SpaceConstant;
+import com.yuluo.picture486ddd.domain.constant.SpaceConstant;
 import com.yuluo.picture486ddd.domain.space.valueobject.SpaceLevelEnum;
 import com.yuluo.picture486ddd.domain.space.valueobject.SpaceTypeEnum;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
-import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import lombok.Data;
 
 /**

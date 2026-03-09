@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@MapperScan("com.yuluo.picture486backend.infrastructure.mapper")
+@MapperScan("com.yuluo.picture486ddd.infrastructure.mapper")
 public class MybatisPlusConfig {
 
     /**

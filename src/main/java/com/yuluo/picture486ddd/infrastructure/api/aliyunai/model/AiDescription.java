@@ -28,8 +28,12 @@ public class AiDescription {
         MultiModalConversation conv = new MultiModalConversation();
         MultiModalMessage userMessage = MultiModalMessage.builder().role(Role.USER.getValue())
                 .content(Arrays.asList(
-                        new HashMap<String, Object>() {{ put("image", "data:image/png;base64," + base64Image); }},
-                        new HashMap<String, Object>() {{ put("text", AiPrompt.IMAGE_DESCRIPTION); }}
+                        new HashMap<>() {{
+                            put("image", "data:image/png;base64," + base64Image);
+                        }},
+                        new HashMap<>() {{
+                            put("text", AiPrompt.IMAGE_DESCRIPTION);
+                        }}
                 )).build();
 
         MultiModalConversationParam param = MultiModalConversationParam.builder()

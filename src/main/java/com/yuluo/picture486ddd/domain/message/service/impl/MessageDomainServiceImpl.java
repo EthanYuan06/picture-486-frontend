@@ -38,7 +38,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         sysMessage.setContent(message);
         sysMessage.setType(0); // 0-系统消息
         sysMessage.setStatus(0); // 0-未读
-        messageRepository.insert(sysMessage);
+        messageRepository.save(sysMessage);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         // 按时间倒序
         queryWrapper.orderByDesc("createTime");
         
-        Page<Message> sysMessagePage = messageRepository.selectPage(new Page<>(current, size), queryWrapper);
+        Page<Message> sysMessagePage = messageRepository.page(new Page<>(current, size), queryWrapper);
         List<Message> records = sysMessagePage.getRecords();
         if (records == null || records.isEmpty()) {
             return new Page<>(current, size, 0);
@@ -81,7 +81,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", loginUser.getId());
         queryWrapper.eq("status", 0); // 未读
-        return messageRepository.selectCount(queryWrapper);
+        return messageRepository.count(queryWrapper);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         }
         // 更新状态
         message.setStatus(1); // 已读
-        return messageRepository.updateById(message) > 0;
+        return messageRepository.updateById(message);
     }
 
     @Override
@@ -113,6 +113,6 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", loginUser.getId());
         queryWrapper.eq("status", 0); // 仅更新未读的
-        return messageRepository.update(message, queryWrapper) > 0;
+        return messageRepository.update(message, queryWrapper);
     }
 }
