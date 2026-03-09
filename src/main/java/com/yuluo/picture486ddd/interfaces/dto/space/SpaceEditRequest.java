@@ -1,0 +1,34 @@
+package com.yuluo.picture486ddd.interfaces.dto.space;
+
+import lombok.Data;
+
+import java.io.Serializable;
+
+/**
+ * 空间编辑请求类
+ */
+@Data
+public class SpaceEditRequest implements Serializable {
+
+    /**
+     * 空间 id
+     */
+    private Long id;
+
+    /**
+     * 相册封面
+     */
+    private String spaceCover;
+
+    /**
+     * 空间名称
+     */
+    private String spaceName;
+    
+    /**
+     * 相册简介
+     */
+    private String spaceDesc;
+
+    private static final long serialVersionUID = 1L;
+}

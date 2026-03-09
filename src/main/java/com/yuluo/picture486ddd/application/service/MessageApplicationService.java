@@ -1,9 +1,9 @@
 package com.yuluo.picture486ddd.application.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
-import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
-import com.yuluo.picture486backend.model.vo.MessageVo;
+import com.yuluo.picture486ddd.interfaces.dto.message.MessageQueryRequest;
+import com.yuluo.picture486ddd.interfaces.dto.message.MessageSendRequest;
+import com.yuluo.picture486ddd.interfaces.vo.message.MessageVo;
 import jakarta.servlet.http.HttpServletRequest;
 
 /**

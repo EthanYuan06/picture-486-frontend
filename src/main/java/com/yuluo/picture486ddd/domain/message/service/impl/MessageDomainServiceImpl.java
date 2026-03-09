@@ -7,11 +7,11 @@ import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
-import com.yuluo.picture486ddd.infrastructure.mapper.SysMessageMapper;
-import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
-import com.yuluo.picture486ddd.domain.message.entity.SysMessage;
+import com.yuluo.picture486ddd.infrastructure.mapper.MessageMapper;
+import com.yuluo.picture486ddd.interfaces.dto.message.MessageQueryRequest;
+import com.yuluo.picture486ddd.domain.message.entity.Message;
 import com.yuluo.picture486ddd.domain.user.entity.User;
-import com.yuluo.picture486backend.model.vo.MessageVo;
+import com.yuluo.picture486ddd.interfaces.vo.message.MessageVo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,12 +27,12 @@ public class MessageDomainServiceImpl implements MessageDomainService {
     @Resource
     private MessageRepository messageRepository;
     @Resource
-    private SysMessageMapper sysMessageMapper;
+    private MessageMapper messageMapper;
 
     @Override
     public void sendMessage(Long userId, String message) {
         // 无论用户是否在线，先持久化消息到数据库
-        SysMessage sysMessage = new SysMessage();
+        Message sysMessage = new Message();
         sysMessage.setReceiveUserId(userId);
         sysMessage.setTitle("系统通知"); // 默认标题
         sysMessage.setContent(message);
@@ -52,7 +52,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
         // 查询当前登录用户的消息
         Long userId = loginUser.getId();
-        QueryWrapper<SysMessage> queryWrapper = new QueryWrapper<>();
+        QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", userId);
         Integer status = messageQueryRequest.getStatus();
         if (status != null) {
@@ -61,8 +61,8 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         // 按时间倒序
         queryWrapper.orderByDesc("createTime");
         
-        Page<SysMessage> sysMessagePage = messageRepository.selectPage(new Page<>(current, size), queryWrapper);
-        List<SysMessage> records = sysMessagePage.getRecords();
+        Page<Message> sysMessagePage = messageRepository.selectPage(new Page<>(current, size), queryWrapper);
+        List<Message> records = sysMessagePage.getRecords();
         if (records == null || records.isEmpty()) {
             return new Page<>(current, size, 0);
         }
@@ -78,7 +78,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         if (loginUser == null) {
             return 0;
         }
-        QueryWrapper<SysMessage> queryWrapper = new QueryWrapper<>();
+        QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", loginUser.getId());
         queryWrapper.eq("status", 0); // 未读
         return messageRepository.selectCount(queryWrapper);
@@ -90,16 +90,16 @@ public class MessageDomainServiceImpl implements MessageDomainService {
             return false;
         }
         // 校验消息是否存在且属于当前用户
-        SysMessage sysMessage = sysMessageMapper.selectById(id);
-        if (sysMessage == null) {
+        Message message = messageMapper.selectById(id);
+        if (message == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "消息不存在");
         }
-        if (!sysMessage.getReceiveUserId().equals(loginUser.getId())) {
+        if (!message.getReceiveUserId().equals(loginUser.getId())) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限操作该消息");
         }
         // 更新状态
-        sysMessage.setStatus(1); // 已读
-        return messageRepository.updateById(sysMessage) > 0;
+        message.setStatus(1); // 已读
+        return messageRepository.updateById(message) > 0;
     }
 
     @Override
@@ -108,11 +108,11 @@ public class MessageDomainServiceImpl implements MessageDomainService {
             return false;
         }
         // 更新所有未读消息为已读
-        SysMessage sysMessage = new SysMessage();
-        sysMessage.setStatus(1);
-        QueryWrapper<SysMessage> queryWrapper = new QueryWrapper<>();
+        Message message = new Message();
+        message.setStatus(1);
+        QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", loginUser.getId());
         queryWrapper.eq("status", 0); // 仅更新未读的
-        return messageRepository.update(sysMessage, queryWrapper) > 0;
+        return messageRepository.update(message, queryWrapper) > 0;
     }
 }

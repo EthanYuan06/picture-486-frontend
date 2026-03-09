@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yuluo.picture486ddd.infrastructure.mapper.SpaceMapper">
 
-    <resultMap id="BaseResultMap" type="com.yuluo.picture486backend.model.entity.Space">
+    <resultMap id="BaseResultMap" type="com.yuluo.picture486ddd.domain.space.entity.Space">
             <id property="id" column="id" />
             <result property="spaceName" column="spaceName" />
             <result property="spaceLevel" column="spaceLevel" />

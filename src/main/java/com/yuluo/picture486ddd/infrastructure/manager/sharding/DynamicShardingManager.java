@@ -1,10 +1,10 @@
 package com.yuluo.picture486ddd.infrastructure.manager.sharding;
 
 import com.baomidou.mybatisplus.extension.toolkit.SqlRunner;
-import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.enums.SpaceLevelEnum;
-import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
-import com.yuluo.picture486backend.service.SpaceService;
+import com.yuluo.picture486ddd.domain.space.entity.Space;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceLevelEnum;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceTypeEnum;
+import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -37,7 +37,7 @@ public class DynamicShardingManager {
     private DataSource dataSource;
 
     @Resource
-    private SpaceService spaceService;
+    private SpaceDomainService spaceDomainService;
 
     private static final String LOGIC_TABLE_NAME = "picture";
 
@@ -82,7 +82,7 @@ public class DynamicShardingManager {
      */
     private Set<String> fetchAllPictureTableNames() {
         // 为了测试方便，直接对所有团队相册分表（实际上线改为仅对旗舰版生效）
-        Set<Long> spaceIds = spaceService.lambdaQuery()
+        Set<Long> spaceIds = spaceDomainService.lambdaQuery()
                 .eq(Space::getSpaceType, SpaceTypeEnum.TEAM.getValue())
                 .list()
                 .stream()

@@ -5,12 +5,12 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.model.SpaceUserAuthConfig;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.model.SpaceUserRole;
-import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.SpaceUser;
+import com.yuluo.picture486ddd.domain.space.entity.Space;
+import com.yuluo.picture486ddd.domain.space.entity.SpaceUser;
 import com.yuluo.picture486ddd.domain.user.entity.User;
-import com.yuluo.picture486backend.model.enums.SpaceRoleEnum;
-import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
-import com.yuluo.picture486backend.service.SpaceUserService;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceRoleEnum;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceTypeEnum;
+import com.yuluo.picture486ddd.domain.space.service.SpaceUserDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ import java.util.List;
 public class SpaceUserAuthManager {
 
     @Resource
-    private SpaceUserService spaceUserService;
+    private SpaceUserDomainService spaceUserDomainService;
 
     @Resource
     private UserApplicationService userApplicationService;
@@ -86,7 +86,7 @@ public class SpaceUserAuthManager {
                 }
             case TEAM:
                 // 团队空间，查询 SpaceUser 并获取角色和权限
-                SpaceUser spaceUser = spaceUserService.lambdaQuery()
+                SpaceUser spaceUser = spaceUserDomainService.lambdaQuery()
                         .eq(SpaceUser::getSpaceId, space.getId())
                         .eq(SpaceUser::getUserId, loginUser.getId())
                         .one();

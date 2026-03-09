@@ -19,14 +19,14 @@ import com.yuluo.picture486ddd.infrastructure.manager.upload.FilePictureUpload;
 import com.yuluo.picture486ddd.infrastructure.manager.upload.PictureUploadTemplate;
 import com.yuluo.picture486ddd.infrastructure.manager.upload.UrlPictureUpload;
 import com.yuluo.picture486ddd.domain.picture.entity.Picture;
-import com.yuluo.picture486backend.model.entity.Space;
+import com.yuluo.picture486ddd.domain.space.entity.Space;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.domain.picture.valueobject.PictureReviewStatusEnum;
 import com.yuluo.picture486ddd.interfaces.vo.picture.PictureVo;
 import com.yuluo.picture486ddd.interfaces.dto.picture.*;
 import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import com.yuluo.picture486ddd.infrastructure.mapper.PictureMapper;
-import com.yuluo.picture486backend.service.SpaceService;
+import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.infrastructure.utils.PictureUtil;
 import jakarta.annotation.Resource;
@@ -63,7 +63,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
     private CosManager cosManager;
 
     @Resource
-    private SpaceService spaceService;
+    private SpaceDomainService spaceDomainService;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -86,7 +86,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         //校验相册是否存在
         Long spaceId = pictureUploadRequest.getSpaceId();
         if (spaceId != null) {
-            Space space = spaceService.getById(spaceId);
+            Space space = spaceDomainService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
             //必须是相册创建人才能上传
 //            if (!loginUser.getId().equals(space.getUserId())) {
@@ -167,7 +167,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
                 ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片上传失败");
                 if (finalSpaceId != null) {
                     //更新相册剩余额度
-                    boolean update = spaceService.lambdaUpdate()
+                    boolean update = spaceDomainService.lambdaUpdate()
                             .eq(Space::getId, finalSpaceId)
                             .setSql("totalSize = totalSize + " + picture.getPicSize())
                             .setSql("totalCount = totalCount + 1")
@@ -470,7 +470,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
             ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "图片删除失败");
             if (spaceId != null) {
                 //更新相册剩余额度
-                boolean update = spaceService.lambdaUpdate()
+                boolean update = spaceDomainService.lambdaUpdate()
                         .eq(Space::getId, oldPicture.getSpaceId())
                         .setSql("totalSize = totalSize - " + oldPicture.getPicSize())
                         .setSql("totalCount = totalCount - 1")
@@ -523,7 +523,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
 
         //2.校验相册权限
-        Space space = spaceService.getById(spaceId);
+        Space space = spaceDomainService.getById(spaceId);
         ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
         //非相册创建人不允许操作
         if (!loginUser.getId().equals(space.getUserId())){
@@ -565,7 +565,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         //校验相册是否存在
         Long spaceId = pictureUploadRequest.getSpaceId();
         if (spaceId != null) {
-            Space space = spaceService.getById(spaceId);
+            Space space = spaceDomainService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
             //必须是相册创建人才能上传
             if (!loginUser.getId().equals(space.getUserId())) {
@@ -611,7 +611,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         Space space = null;
         if (picture.getSpaceId() != null) {
             // 私有相册中的图片
-            space = spaceService.getById(picture.getSpaceId());
+            space = spaceDomainService.getById(picture.getSpaceId());
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
             
             //校验权限：只有相册创建人才能删除
@@ -654,7 +654,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
             updateSpace.setId(space.getId());
             updateSpace.setTotalSize(space.getTotalSize() - totalSize);
             updateSpace.setTotalCount(space.getTotalCount() - totalCount);
-            boolean updateResult = spaceService.updateById(updateSpace);
+            boolean updateResult = spaceDomainService.updateById(updateSpace);
             ThrowUtils.throwIf(!updateResult, ErrorCode.OPERATION_ERROR, "更新相册额度失败");
         }
         //异步删除存储桶中的实际文件
@@ -682,9 +682,9 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         ThrowUtils.throwIf(file.getSize() > 15 * 1024 * 1024, ErrorCode.PARAMS_ERROR, "封面图片过大，请重新上传");
 
         // 校验相册是否存在及权限
-        Space oldSpace = spaceService.getById(id);
+        Space oldSpace = spaceDomainService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
-        spaceService.checkSpaceAuth(oldSpace, loginUser);
+        spaceDomainService.checkSpaceAuth(oldSpace, loginUser);
 
         // 构建上传路径前缀，指定存储桶中的存储路径为 cover 目录
         String uploadPathPrefix = String.format("cover/%s", loginUser.getId());
@@ -695,7 +695,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         Space space = new Space();
         space.setId(id);
         space.setSpaceCover(spaceCover);
-        boolean result = spaceService.updateById(space);
+        boolean result = spaceDomainService.updateById(space);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "封面上传失败");
     }
 

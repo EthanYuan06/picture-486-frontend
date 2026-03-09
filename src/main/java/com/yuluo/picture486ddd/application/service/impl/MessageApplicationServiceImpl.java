@@ -1,10 +1,10 @@
 package com.yuluo.picture486ddd.application.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yuluo.picture486backend.model.dto.message.MessageQueryRequest;
-import com.yuluo.picture486backend.model.dto.message.MessageSendRequest;
+import com.yuluo.picture486ddd.interfaces.dto.message.MessageQueryRequest;
+import com.yuluo.picture486ddd.interfaces.dto.message.MessageSendRequest;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
-import com.yuluo.picture486backend.model.vo.MessageVo;
+import com.yuluo.picture486ddd.interfaces.vo.message.MessageVo;
 import com.yuluo.picture486ddd.application.service.MessageApplicationService;
 import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.domain.user.entity.User;

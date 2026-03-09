@@ -13,14 +13,14 @@ import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.model.SpaceUserPermissionConstant;
 import com.yuluo.picture486ddd.domain.picture.entity.Picture;
-import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.SpaceUser;
+import com.yuluo.picture486ddd.domain.space.entity.Space;
+import com.yuluo.picture486ddd.domain.space.entity.SpaceUser;
 import com.yuluo.picture486ddd.domain.user.entity.User;
-import com.yuluo.picture486backend.model.enums.SpaceRoleEnum;
-import com.yuluo.picture486backend.model.enums.SpaceTypeEnum;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceRoleEnum;
+import com.yuluo.picture486ddd.domain.space.valueobject.SpaceTypeEnum;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
-import com.yuluo.picture486backend.service.SpaceService;
-import com.yuluo.picture486backend.service.SpaceUserService;
+import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
+import com.yuluo.picture486ddd.domain.space.service.SpaceUserDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,11 +48,11 @@ public class StpInterfaceImpl implements StpInterface {
     @Resource
     private SpaceUserAuthManager spaceUserAuthManager;
     @Resource
-    private SpaceUserService spaceUserService;
+    private SpaceUserDomainService spaceUserDomainService;
     @Resource
     private PictureDomainService pictureDomainService;
     @Resource
-    private SpaceService spaceService;
+    private SpaceDomainService spaceDomainService;
     @Resource
     private UserApplicationService userApplicationService;
     /**
@@ -86,12 +86,12 @@ public class StpInterfaceImpl implements StpInterface {
         // 如果有 spaceUserId，必然是团队相册，通过数据库查询 SpaceUser 对象
         Long spaceUserId = authContext.getSpaceUserId();
         if (spaceUserId != null) {
-            spaceUser = spaceUserService.getById(spaceUserId);
+            spaceUser = spaceUserDomainService.getById(spaceUserId);
             if (spaceUser == null) {
                 throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "未找到相册用户信息");
             }
             // 取出当前登录用户对应的 spaceUser
-            SpaceUser loginSpaceUser = spaceUserService.lambdaQuery()
+            SpaceUser loginSpaceUser = spaceUserDomainService.lambdaQuery()
                     .eq(SpaceUser::getSpaceId, spaceUser.getSpaceId())
                     .eq(SpaceUser::getUserId, userId)
                     .one();
@@ -129,7 +129,7 @@ public class StpInterfaceImpl implements StpInterface {
             }
         }
         // 获取 Space 对象
-        Space space = spaceService.getById(spaceId);
+        Space space = spaceDomainService.getById(spaceId);
         if (space == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "未找到相册信息");
         }
@@ -143,7 +143,7 @@ public class StpInterfaceImpl implements StpInterface {
             }
         } else {
             // 团队相册，查询 SpaceUser 并获取角色和权限
-            spaceUser = spaceUserService.lambdaQuery()
+            spaceUser = spaceUserDomainService.lambdaQuery()
                     .eq(SpaceUser::getSpaceId, spaceId)
                     .eq(SpaceUser::getUserId, userId)
                     .one();

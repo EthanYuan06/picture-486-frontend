@@ -8,8 +8,8 @@ import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.StpKit;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.model.SpaceUserPermissionConstant;
-import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.service.SpaceService;
+import com.yuluo.picture486ddd.domain.space.entity.Space;
+import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.application.service.PictureApplicationService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.domain.picture.entity.Picture;
@@ -51,7 +51,7 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
     private UserApplicationService userApplicationService;
 
     @Resource
-    private SpaceService spaceService;
+    private SpaceDomainService spaceDomainService;
 
     @Resource
     private SpaceUserAuthManager spaceUserAuthManager;
@@ -79,7 +79,7 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
         if (spaceId != null){
             boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
             ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
-            space = spaceService.getById(spaceId);
+            space = spaceDomainService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
             User loginUser = userApplicationService.getLoginUser(request);
             this.checkPictureAuth(loginUser, picture);

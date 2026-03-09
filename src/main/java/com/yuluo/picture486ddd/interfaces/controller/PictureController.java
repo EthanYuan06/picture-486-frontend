@@ -7,7 +7,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.yuluo.picture486ddd.application.service.PictureApplicationService;
 import com.yuluo.picture486ddd.infrastructure.annotation.AuthCheck;
-import com.yuluo.picture486ddd.infrastructure.api.CosManager;
 import com.yuluo.picture486ddd.infrastructure.common.BaseResponse;
 import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
 import com.yuluo.picture486ddd.infrastructure.common.ResultUtils;
@@ -15,20 +14,18 @@ import com.yuluo.picture486ddd.domain.user.constant.UserConstant;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
-import com.yuluo.picture486ddd.infrastructure.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.StpKit;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.annotation.SaSpaceCheckPermission;
 import com.yuluo.picture486ddd.infrastructure.manager.auth.model.SpaceUserPermissionConstant;
-import com.yuluo.picture486ddd.infrastructure.manager.upload.FilePictureUpload;
 import com.yuluo.picture486ddd.domain.picture.entity.Picture;
-import com.yuluo.picture486backend.model.entity.Space;
+import com.yuluo.picture486ddd.domain.space.entity.Space;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.domain.picture.valueobject.PictureReviewStatusEnum;
 import com.yuluo.picture486ddd.interfaces.assembler.PictureAssembler;
 import com.yuluo.picture486ddd.interfaces.vo.picture.PictureTagCategory;
 import com.yuluo.picture486ddd.interfaces.vo.picture.PictureVo;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
-import com.yuluo.picture486backend.service.SpaceService;
+import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.infrastructure.utils.PictureUtil;
 import com.yuluo.picture486ddd.interfaces.dto.picture.*;
@@ -67,7 +64,7 @@ public class PictureController {
     private StringRedisTemplate stringRedisTemplate;
 
     @Resource
-    private SpaceService spaceService;
+    private SpaceDomainService spaceDomainService;
 
     @PostMapping("/upload")
     @Operation(summary = "上传图片")
@@ -153,7 +150,7 @@ public class PictureController {
         }else {
             //私有相册
             //校验相册是否存在
-            Space space = spaceService.getById(spaceId);
+            Space space = spaceDomainService.getById(spaceId);
             ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
         }
         

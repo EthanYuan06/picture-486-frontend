@@ -1,8 +1,8 @@
 package com.yuluo.picture486ddd.infrastructure.manager.auth;
 
 import com.yuluo.picture486ddd.domain.picture.entity.Picture;
-import com.yuluo.picture486backend.model.entity.Space;
-import com.yuluo.picture486backend.model.entity.SpaceUser;
+import com.yuluo.picture486ddd.domain.space.entity.Space;
+import com.yuluo.picture486ddd.domain.space.entity.SpaceUser;
 import lombok.Data;
 
 /**
