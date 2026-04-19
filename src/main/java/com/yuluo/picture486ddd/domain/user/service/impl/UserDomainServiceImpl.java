@@ -88,10 +88,6 @@ public class UserDomainServiceImpl implements UserDomainService {
      */
     @Override
     public LoginUserVo userLogin(String userAccount, String userPassword, HttpServletRequest request) {
-        //移除登录态
-        request.getSession().removeAttribute(USER_LOGIN_STATE);
-        //移除Sa-Token登录态
-        StpKit.SPACE.logout();
         //加密
         String encryptedPassword = getEncryptedPassword(userPassword);
         //查询用户是否存在（防止缓存与数据库不一致）
@@ -103,14 +99,9 @@ public class UserDomainServiceImpl implements UserDomainService {
             log.info("user login failed, userAccount cannot match userPassword.");
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户不存在或密码错误");
         }
-        Object attribute = request.getSession().getAttribute(USER_LOGIN_STATE);
-        if (attribute == null) {
-            //4.记录用户登录态
-            request.getSession().setAttribute(USER_LOGIN_STATE, user);
-            //5.记录用户登录态到Sa-Token中，便于多人相册鉴权
-            StpKit.SPACE.login(user.getId());//同时登录Space体系的账号（分为User体系用于整个项目，和Space体系用于多人相册）
-            StpKit.SPACE.getSession().set(USER_LOGIN_STATE, user);//记录Space体系的登录态
-        }
+        //记录用户登录态到Sa-Token中
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(USER_LOGIN_STATE, user);
         return this.getLoginUserVo(user);
     }
 
@@ -123,14 +114,12 @@ public class UserDomainServiceImpl implements UserDomainService {
     @Override
     public boolean userLogout(HttpServletRequest request) {
         ThrowUtils.throwIf(request == null, ErrorCode.PARAMS_ERROR);
-        //1.判断是否登录
-        Object user = request.getSession().getAttribute(USER_LOGIN_STATE);
+        //判断是否登录
+        Object user = StpKit.SPACE.getSession().get(USER_LOGIN_STATE);
         if (user == null) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "未登录");
         }
-        //2.移除登录态
-        request.getSession().removeAttribute(USER_LOGIN_STATE);
-        //3.移除Sa-Token登录态
+        //移除Sa-Token登录态
         StpKit.SPACE.logout();
         return true;
     }
@@ -143,13 +132,13 @@ public class UserDomainServiceImpl implements UserDomainService {
      */
     @Override
     public User getLoginUser(HttpServletRequest request) {
-        //1.判断是否已登录
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        //从Sa-Token获取登录用户
+        Object userObj = StpKit.SPACE.getSession().get(USER_LOGIN_STATE);
         User currentUser = (User) userObj;
         if (currentUser == null || currentUser.getId() == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN_ERROR);
         }
-        //2.数据库查询用户是否存在
+        //数据库查询用户是否存在
         long userId = currentUser.getId();
         currentUser = userRepository.getById(userId);
         if (currentUser == null) {

@@ -24,6 +24,7 @@ import com.yuluo.picture486ddd.domain.picture.valueobject.PictureReviewStatusEnu
 import com.yuluo.picture486ddd.interfaces.assembler.PictureAssembler;
 import com.yuluo.picture486ddd.interfaces.vo.picture.PictureTagCategory;
 import com.yuluo.picture486ddd.interfaces.vo.picture.PictureVo;
+import com.yuluo.picture486ddd.interfaces.vo.picture.AiDescriptionTaskVo;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
@@ -81,9 +82,15 @@ public class PictureController {
     @PostMapping("/ai_generate_description")
     @Operation(summary = "AI生成图片简介")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
-    public BaseResponse<String> AiGenerateDescription(@RequestPart("file") MultipartFile multipartFile, HttpServletRequest request) {
-            String description = pictureApplicationService.AiGenerateDescription(multipartFile);
-            return ResultUtils.success(description);
+    public BaseResponse<AiDescriptionTaskVo> AiGenerateDescription(@RequestPart("file") MultipartFile multipartFile, HttpServletRequest request) {
+            return ResultUtils.success(pictureApplicationService.AiGenerateDescription(multipartFile, request));
+    }
+
+    @GetMapping("/ai_generate_description/result")
+    @Operation(summary = "查询AI图片简介生成结果")
+    @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
+    public BaseResponse<AiDescriptionTaskVo> getAiGenerateDescriptionResult(@RequestParam("taskId") String taskId, HttpServletRequest request) {
+        return ResultUtils.success(pictureApplicationService.getAiDescriptionResult(taskId, request));
     }
 
     @PostMapping("/upload/cover")
@@ -158,7 +165,7 @@ public class PictureController {
         String queryConditionStr = JSONUtil.toJsonStr(pictureQueryRequest);
         String hashKey = DigestUtils.md5DigestAsHex(queryConditionStr.getBytes());
         String cacheKey = "listPage:" + hashKey;
-        
+
         // 查询本地缓存
         String cachedValue = LOCAL_CACHE.getIfPresent(cacheKey);
         if (cachedValue != null) {
@@ -166,7 +173,7 @@ public class PictureController {
             Page<Picture> result = convertJsonToPicturePage(cachedValue);
             return ResultUtils.success(result);
         }
-        
+
         // 查询分布式缓存
         ValueOperations<String, String> valueOps = stringRedisTemplate.opsForValue();
         cachedValue = valueOps.get(cacheKey);
@@ -184,10 +191,10 @@ public class PictureController {
         // 更新本地缓存
         String cacheValue = JSONUtil.toJsonStr(result);
         LOCAL_CACHE.put(cacheKey, cacheValue);
-        
+
         // 更新Redis缓存，设置过期时间5分钟
         valueOps.set(cacheKey, cacheValue, 5, TimeUnit.MINUTES);
-        
+
         return ResultUtils.success(result);
     }
 
@@ -394,8 +401,8 @@ public class PictureController {
     private final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
                     .maximumSize(10000L)
-                    // 缓存 5 分钟移除
-                    .expireAfterWrite(5L, TimeUnit.MINUTES)
+                    // 缓存 2 分钟移除
+                    .expireAfterWrite(2L, TimeUnit.MINUTES)
                     .build();
     /**
      * 清除指定前缀的缓存

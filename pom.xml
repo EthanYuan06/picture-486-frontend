@@ -42,17 +42,17 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
-        <!-- Redis -->
-<!--        <dependency>-->
-<!--            <groupId>org.springframework.boot</groupId>-->
-<!--            <artifactId>spring-boot-starter-data-redis</artifactId>-->
-<!--        </dependency>-->
-
-        <!-- Spring Session + Redis -->
+        <!-- Redis - 用于 PictureController 的缓存 -->
         <dependency>
-            <groupId>org.springframework.session</groupId>
-            <artifactId>spring-session-data-redis</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+
+        <!-- Spring Session + Redis - 与 Sa-Token 冲突，已禁用 -->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.session</groupId>-->
+<!--            <artifactId>spring-session-data-redis</artifactId>-->
+<!--        </dependency>-->
 
         <!--Redisson-->
         <!-- https://mvnrepository.com/artifact/org.redisson/redisson-spring-boot-starter -->
@@ -117,10 +117,10 @@
             <version>1.44.0</version>
         </dependency>
 
-        <!-- Sa-Token 整合 RedisTemplate -->
+        <!-- Sa-Token 整合 Redis (使用 jackson 序列化) -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-redis-template</artifactId>
+            <artifactId>sa-token-redis-jackson</artifactId>
             <version>1.44.0</version>
         </dependency>
 

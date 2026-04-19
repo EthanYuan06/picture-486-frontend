@@ -30,6 +30,22 @@ Content-Disposition: form-data; name="picName"
 {{publicPicName}}
 --WebAppBoundary--
 
+### 1.2.1 AI生成图片简介-创建任务(成功)
+POST http://localhost:8123/api/picture/ai_generate_description
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+Cookie: {{commonUserCookie}}
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="11.png"
+Content-Type: image/png
+
+< 11.png
+--WebAppBoundary--
+
+### 1.2.2 AI生成图片简介-查询结果(轮询)
+GET http://localhost:8123/api/picture/ai_generate_description/result?taskId={{aiDescriptionTaskId}}
+Cookie: {{commonUserCookie}}
+
 ### 1.3 编辑公开图库图片-管理员(成功)
 POST http://localhost:8123/api/picture/edit
 Content-Type: application/json

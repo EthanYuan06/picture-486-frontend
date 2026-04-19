@@ -65,6 +65,17 @@ public class CosManager {
     }
 
     /**
+     * 上传原始对象，不做图片处理
+     *
+     * @param key  唯一键
+     * @param file 文件
+     */
+    public PutObjectResult putObject(String key, File file) {
+        PutObjectRequest putObjectRequest = new PutObjectRequest(cosClientConfig.getBucket(), key, file);
+        return cosClient.putObject(putObjectRequest);
+    }
+
+    /**
      * 下载对象
      *
      * @param key 唯一键

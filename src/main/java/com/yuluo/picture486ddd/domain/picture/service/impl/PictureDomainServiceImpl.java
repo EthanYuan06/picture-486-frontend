@@ -1,7 +1,9 @@
 package com.yuluo.picture486ddd.domain.picture.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -9,6 +11,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486ddd.domain.picture.repository.PictureRepository;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
+import com.yuluo.picture486ddd.domain.picture.entity.AiDescriptionTask;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.infrastructure.api.aliyunai.model.AiDescription;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
@@ -21,6 +24,7 @@ import com.yuluo.picture486ddd.shared.manager.upload.UrlPictureUpload;
 import com.yuluo.picture486ddd.domain.picture.entity.Picture;
 import com.yuluo.picture486ddd.domain.space.entity.Space;
 import com.yuluo.picture486ddd.domain.user.entity.User;
+import com.yuluo.picture486ddd.domain.picture.valueobject.AiDescriptionTaskStatusEnum;
 import com.yuluo.picture486ddd.domain.picture.valueobject.PictureReviewStatusEnum;
 import com.yuluo.picture486ddd.interfaces.vo.picture.PictureVo;
 import com.yuluo.picture486ddd.interfaces.dto.picture.*;
@@ -32,6 +36,8 @@ import com.yuluo.picture486ddd.infrastructure.utils.PictureUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -41,6 +47,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -73,6 +80,12 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
 
     @Resource
     private PictureRepository pictureRepository;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    private static final long AI_DESCRIPTION_TASK_EXPIRE_MINUTES = 30L;
+    private static final String AI_DESCRIPTION_TASK_KEY_PREFIX = "picture:ai:task:";
 
     @Override
     public PictureVo uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -715,28 +728,76 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
     }
 
     @Override
-    public String AiGenerateDescription(MultipartFile multipartFile) {
-        String filename = multipartFile.getOriginalFilename();
-        String tempPath = String.format("/temp/%s", filename);
+    public AiDescriptionTask createAiDescriptionTask(MultipartFile multipartFile, User loginUser) {
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        ThrowUtils.throwIf(multipartFile == null || multipartFile.isEmpty(), ErrorCode.PARAMS_ERROR, "图片不能为空");
+        ThrowUtils.throwIf(!PictureUtil.isAllowedImageFormat(multipartFile), ErrorCode.PARAMS_ERROR, "图片格式不支持");
+
+        String originalFilename = multipartFile.getOriginalFilename();
+        String suffix = FileUtil.getSuffix(originalFilename);
+        String taskId = RandomUtil.randomString(24);
+        String uploadPath = String.format("ai-description/%s/%s.%s", loginUser.getId(), taskId, suffix);
         File tempFile = null;
         try {
-            //创建临时文件保存原始图片
-            tempFile = File.createTempFile("ai_temp_", "_" + filename);
+            tempFile = File.createTempFile("ai_description_", "." + suffix);
             multipartFile.transferTo(tempFile);
-            // 将处理后的图转换为base64
-            String base64Image = PictureUtil.convertLocalImageToBase64(tempFile);
-            // 将base64Image传递给AI服务
-            return AiDescription.callWithLocalFile(base64Image);
+            cosManager.putObject(uploadPath, tempFile);
+
+            Date now = new Date();
+            AiDescriptionTask task = new AiDescriptionTask();
+            task.setTaskId(taskId);
+            task.setUserId(loginUser.getId());
+            task.setStatus(AiDescriptionTaskStatusEnum.PROCESSING.getValue());
+            task.setCosObjectKey(uploadPath);
+            task.setCreateTime(now);
+            task.setUpdateTime(now);
+            saveAiDescriptionTask(task);
+            return task;
         } catch (Exception e) {
-            log.error("AI图片描述生成失败", e);
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI处理失败");
-        }finally{
-            if (tempFile != null) {
-                // 删除临时文件
-                boolean delete = tempFile.delete();
-                if (!delete) {
-                    log.error("file delete error, filepath = {}", tempPath);
-                }
+            log.error("创建AI图片简介任务失败", e);
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建AI任务失败");
+        } finally {
+            deleteTempFile(tempFile);
+        }
+    }
+
+    @Override
+    public AiDescriptionTask getAiDescriptionTask(String taskId, User loginUser) {
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NO_AUTH_ERROR);
+        ThrowUtils.throwIf(StrUtil.isBlank(taskId), ErrorCode.PARAMS_ERROR, "任务不存在");
+        AiDescriptionTask task = readAiDescriptionTask(taskId);
+        ThrowUtils.throwIf(task == null, ErrorCode.NOT_FOUND_ERROR, "任务不存在或已过期");
+        ThrowUtils.throwIf(!Objects.equals(task.getUserId(), loginUser.getId()), ErrorCode.NO_AUTH_ERROR, "无权限查看该任务");
+        return task;
+    }
+
+    @Override
+    public void processAiDescriptionTask(String taskId) {
+        AiDescriptionTask task = readAiDescriptionTask(taskId);
+        if (task == null) {
+            log.warn("AI图片简介任务不存在, taskId={}", taskId);
+            return;
+        }
+        try {
+            var cosObject = cosManager.getPictureObject(task.getCosObjectKey());
+            try (var objectContent = cosObject.getObjectContent()) {
+            String base64Image = PictureUtil.convertInputStreamToBase64(objectContent);
+            String description = AiDescription.callWithLocalFile(base64Image);
+            task.setStatus(AiDescriptionTaskStatusEnum.SUCCESS.getValue());
+            task.setDescription(description);
+            task.setErrorMessage(null);
+            }
+        } catch (Exception e) {
+            log.error("AI图片描述生成失败, taskId={}", taskId, e);
+            task.setStatus(AiDescriptionTaskStatusEnum.FAILED.getValue());
+            task.setErrorMessage("AI处理失败，请重试");
+        } finally {
+            task.setUpdateTime(new Date());
+            saveAiDescriptionTask(task);
+            try {
+                cosManager.deleteObject(task.getCosObjectKey());
+            } catch (Exception e) {
+                log.warn("清理AI图片简介源文件失败, taskId={}, key={}", taskId, task.getCosObjectKey(), e);
             }
         }
     }
@@ -744,6 +805,35 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
     @Override
     public void validPicture(Picture picture) {
         Picture.validPicture(picture);
+    }
+
+    private void saveAiDescriptionTask(AiDescriptionTask task) {
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        valueOperations.set(buildAiDescriptionTaskKey(task.getTaskId()), JSONUtil.toJsonStr(task),
+                AI_DESCRIPTION_TASK_EXPIRE_MINUTES, TimeUnit.MINUTES);
+    }
+
+    private AiDescriptionTask readAiDescriptionTask(String taskId) {
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        String taskJson = valueOperations.get(buildAiDescriptionTaskKey(taskId));
+        if (StrUtil.isBlank(taskJson)) {
+            return null;
+        }
+        return JSONUtil.toBean(taskJson, AiDescriptionTask.class);
+    }
+
+    private String buildAiDescriptionTaskKey(String taskId) {
+        return AI_DESCRIPTION_TASK_KEY_PREFIX + taskId;
+    }
+
+    private void deleteTempFile(File file) {
+        if (file == null) {
+            return;
+        }
+        boolean deleted = file.delete();
+        if (!deleted) {
+            log.error("file delete error, filepath = {}", file.getAbsolutePath());
+        }
     }
 
 }

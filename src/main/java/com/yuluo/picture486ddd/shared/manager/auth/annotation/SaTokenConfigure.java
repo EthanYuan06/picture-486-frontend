@@ -15,7 +15,10 @@ public class SaTokenConfigure implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // 注册 Sa-Token 拦截器，打开注解式鉴权功能
-        registry.addInterceptor(new SaInterceptor()).addPathPatterns("/**");
+        // 排除登出接口，避免 logout 时拦截器访问已失效的 Session 导致栈溢出
+        registry.addInterceptor(new SaInterceptor())
+                .addPathPatterns("/**")
+                .excludePathPatterns("/user/logout");
     }
 
     @PostConstruct

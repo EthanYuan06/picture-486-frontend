@@ -64,16 +64,19 @@ create table if not exists space
 (
     id         bigint auto_increment comment 'id' primary key,
     spaceName  varchar(128)                       null comment '空间名称',
+    spaceDesc   varchar(512)                       null comment '空间描述',
     spaceLevel int      default 0                 null comment '空间级别：0-普通版 1-专业版 2-旗舰版',
     maxSize    bigint   default 0                 null comment '空间图片的最大总大小',
     maxCount   bigint   default 0                 null comment '空间图片的最大数量',
     totalSize  bigint   default 0                 null comment '当前空间下图片的总大小',
     totalCount bigint   default 0                 null comment '当前空间下的图片数量',
     userId     bigint                             not null comment '创建用户 id',
+    spaceCover varchar(512)                      null comment '空间封面',
     createTime datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     editTime   datetime default CURRENT_TIMESTAMP not null comment '编辑时间',
     updateTime datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
     isDelete   tinyint  default 0                 not null comment '是否删除',
+    spaceType  int      default 0                 null comment '空间类型：0-个人空间 1-团队空间',
     -- 索引设计
     index idx_userId (userId),        -- 提升基于用户的查询效率
     index idx_spaceName (spaceName),  -- 提升基于空间名称的查询效率
@@ -86,3 +89,42 @@ ALTER TABLE picture
 
 -- 创建索引
 CREATE INDEX idx_spaceId ON picture (spaceId);
+
+-- 空间用户关联表
+create table space_user
+(
+    id         bigint auto_increment comment 'id'
+        primary key,
+    spaceId    bigint                                 not null comment '空间 id',
+    userId     bigint                                 not null comment '用户 id',
+    spaceRole  varchar(128) default 'viewer'          null comment '空间角色：viewer/editor/admin',
+    createTime datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    updateTime datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    constraint uk_spaceId_userId
+        unique (spaceId, userId)
+)
+    comment '空间用户关联' engine = InnoDB
+                           collate = utf8mb4_unicode_ci;
+
+create index idx_spaceId
+    on space_user (spaceId);
+
+create index idx_userId
+    on space_user (userId);
+
+-- 系统消息表
+CREATE TABLE sys_message (
+                             id BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                             receiveUserId BIGINT NOT NULL COMMENT '接收用户ID',
+                             title VARCHAR(255) NOT NULL COMMENT '消息标题',
+                             content VARCHAR(1000) COMMENT '消息内容',
+                             type TINYINT NOT NULL DEFAULT 0 COMMENT '消息类型（0-系统通知 1-用户消息等）',
+                             status TINYINT NOT NULL DEFAULT 0 COMMENT '消息状态（0-未读 1-已读 2-已删除）',
+                             createTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+                             updateTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+                             isDelete TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除（0-未删除 1-已删除）',
+                             PRIMARY KEY (id),
+                             INDEX idx_receive_user_id (receiveUserId),
+                             INDEX idx_create_time (createTime),
+                             INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统消息表';

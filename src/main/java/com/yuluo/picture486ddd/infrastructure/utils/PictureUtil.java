@@ -280,5 +280,28 @@ public class PictureUtil {
         }
     }
 
+    /**
+     * 将输入流转换为 Base64 编码
+     *
+     * @param inputStream 输入流
+     * @return Base64 编码的图片字符串
+     */
+    public static String convertInputStreamToBase64(InputStream inputStream) {
+        if (inputStream == null) {
+            throw new IllegalArgumentException("输入流不能为空");
+        }
+
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            return Base64.getEncoder().encodeToString(outputStream.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("图片转换Base64失败", e);
+        }
+    }
+
 
 }
