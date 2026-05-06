@@ -1,7 +1,7 @@
 spring:
   application:
     name: picture-486-backend
-  #最大上传文件体积
+  # 最大上传文件体积
   servlet:
     multipart:
       max-file-size: 15MB
