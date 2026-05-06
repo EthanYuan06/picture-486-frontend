@@ -49,7 +49,7 @@ public class UserController {
 
     @PostMapping("/logout")
     @Operation(summary = "退出登录")
-    public BaseResponse<Boolean> userLogin(HttpServletRequest request) {
+    public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
         boolean result = userApplicationService.userLogout(request);
         return ResultUtils.success(result);
     }

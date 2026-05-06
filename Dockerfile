@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY *.jar app.jar
 EXPOSE 8124

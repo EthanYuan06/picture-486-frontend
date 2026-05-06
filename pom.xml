@@ -117,10 +117,10 @@
             <version>1.44.0</version>
         </dependency>
 
-        <!-- Sa-Token 整合 Redis (使用 jackson 序列化) -->
+        <!-- Sa-Token 集成 Redis（使用官方推荐的 JDK 序列化） -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-redis-jackson</artifactId>
+            <artifactId>sa-token-redis-template-jdk-serializer</artifactId>
             <version>1.44.0</version>
         </dependency>
 
