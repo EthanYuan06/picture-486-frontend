@@ -1,6 +1,7 @@
 package com.yuluo.picture486ddd.infrastructure.websocket;
 
 import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
 import jakarta.websocket.OnMessage;
 import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
@@ -46,9 +47,21 @@ public class WebSocketServer {
     @OnClose
     public void onClose(Session session, @PathParam("userId") Long userId) {
         if (userId != null) {
-            ONLINE_USERS.remove(userId);
+            ONLINE_USERS.remove(userId, session);
             log.info("WebSocket 连接关闭: userId={}, sessionId={}", userId, session.getId());
         }
+    }
+
+    @OnError
+    public void onError(Session session, Throwable throwable, @PathParam("userId") Long userId) {
+        if (userId != null && session != null) {
+            ONLINE_USERS.remove(userId, session);
+        }
+        if (throwable instanceof java.io.EOFException) {
+            log.info("WebSocket 连接异常断开: userId={}, sessionId={}", userId, session == null ? null : session.getId());
+            return;
+        }
+        log.error("WebSocket 发生异常: userId={}, sessionId={}", userId, session == null ? null : session.getId(), throwable);
     }
 
     /**

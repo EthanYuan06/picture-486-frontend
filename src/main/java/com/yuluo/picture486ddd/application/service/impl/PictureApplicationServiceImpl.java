@@ -27,6 +27,9 @@ import com.yuluo.picture486ddd.interfaces.vo.user.UserVo;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,6 +63,12 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
 
     @Resource
     private PictureAiDescriptionTaskProcessor pictureAiDescriptionTaskProcessor;
+
+    @Resource
+    private ObjectProvider<RabbitTemplate> rabbitTemplateProvider;
+
+    @Value("${ai.description.mq.enabled:true}")
+    private boolean aiDescriptionMqEnabled;
 
     @Override
     public PictureVo uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, HttpServletRequest request) {
@@ -233,7 +242,19 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
     public AiDescriptionTaskVo AiGenerateDescription(MultipartFile multipartFile, HttpServletRequest request) {
         User loginUser = userApplicationService.getLoginUser(request);
         AiDescriptionTask task = pictureDomainService.createAiDescriptionTask(multipartFile, loginUser);
-        pictureAiDescriptionTaskProcessor.processTask(task.getTaskId());
+        RabbitTemplate rabbitTemplate = rabbitTemplateProvider.getIfAvailable();
+        if (aiDescriptionMqEnabled && rabbitTemplate != null) {
+            com.yuluo.picture486ddd.domain.picture.dto.AiDescriptionTaskMessage message = new com.yuluo.picture486ddd.domain.picture.dto.AiDescriptionTaskMessage();
+            message.setTaskId(task.getTaskId());
+            message.setAttempt(0);
+            rabbitTemplate.convertAndSend(
+                    com.yuluo.picture486ddd.domain.picture.constant.AiDescriptionMqConstants.EXCHANGE,
+                    com.yuluo.picture486ddd.domain.picture.constant.AiDescriptionMqConstants.ROUTING_KEY,
+                    message
+            );
+        } else {
+            pictureAiDescriptionTaskProcessor.processTask(task.getTaskId());
+        }
         return toAiDescriptionTaskVo(task);
     }
 

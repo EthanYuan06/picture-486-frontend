@@ -167,4 +167,6 @@ public interface PictureDomainService extends IService<Picture> {
     AiDescriptionTask getAiDescriptionTask(String taskId, User loginUser);
 
     void processAiDescriptionTask(String taskId);
+
+    void markAiDescriptionTaskFailed(String taskId, String errorMessage);
 }

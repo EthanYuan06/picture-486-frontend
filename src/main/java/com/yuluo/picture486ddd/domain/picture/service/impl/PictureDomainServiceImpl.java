@@ -13,11 +13,11 @@ import com.yuluo.picture486ddd.domain.picture.repository.PictureRepository;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import com.yuluo.picture486ddd.domain.picture.entity.AiDescriptionTask;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
-import com.yuluo.picture486ddd.infrastructure.api.aliyunai.model.AiDescription;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486ddd.infrastructure.api.CosManager;
+import com.yuluo.picture486ddd.infrastructure.api.aliyunai.client.AiDescriptionClient;
 import com.yuluo.picture486ddd.shared.manager.upload.FilePictureUpload;
 import com.yuluo.picture486ddd.shared.manager.upload.PictureUploadTemplate;
 import com.yuluo.picture486ddd.shared.manager.upload.UrlPictureUpload;
@@ -87,6 +87,9 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private AiDescriptionClient aiDescriptionClient;
 
     private static final long AI_DESCRIPTION_TASK_EXPIRE_MINUTES = 30L;
     private static final String AI_DESCRIPTION_TASK_KEY_PREFIX = "picture:ai:task:";
@@ -801,20 +804,14 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
             log.warn("AI图片简介任务不存在, taskId={}", taskId);
             return;
         }
-        String messageJson = null;
         try {
             String tempFilePath = task.getTempFilePath();
             ThrowUtils.throwIf(StrUtil.isBlank(tempFilePath), ErrorCode.SYSTEM_ERROR, "任务图片不存在");
             String base64Image = PictureUtil.convertLocalImageToBase64(new File(tempFilePath));
-            String description = AiDescription.callWithBase64(base64Image, task.getMimeType());
+            String description = aiDescriptionClient.generate(base64Image, task.getMimeType());
             task.setStatus(AiDescriptionTaskStatusEnum.SUCCESS.getValue());
             task.setDescription(description);
             task.setErrorMessage(null);
-        } catch (Exception e) {
-            log.error("AI图片描述生成失败, taskId={}", taskId, e);
-            task.setStatus(AiDescriptionTaskStatusEnum.FAILED.getValue());
-            task.setErrorMessage("AI处理失败，请重试");
-        } finally {
             task.setUpdateTime(new Date());
             saveAiDescriptionTask(task);
             try {
@@ -825,7 +822,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
                 log.warn("清理AI图片简介临时文件失败, taskId={}, path={}", taskId, task.getTempFilePath(), e);
             }
             try {
-                messageJson = JSONUtil.createObj()
+                String messageJson = JSONUtil.createObj()
                         .putOnce("type", "ai_description")
                         .putOnce("taskId", task.getTaskId())
                         .putOnce("status", task.getStatus())
@@ -834,8 +831,44 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
                         .toString();
                 WebSocketServer.sendMessage(task.getUserId(), messageJson);
             } catch (Exception e) {
-                log.warn("WebSocket推送AI图片简介结果失败, taskId={}, message={}", taskId, messageJson, e);
+                log.warn("WebSocket推送AI图片简介结果失败, taskId={}", taskId, e);
             }
+        } catch (Exception e) {
+            log.error("AI图片描述生成失败, taskId={}", taskId, e);
+            task.setUpdateTime(new Date());
+            saveAiDescriptionTask(task);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void markAiDescriptionTaskFailed(String taskId, String errorMessage) {
+        AiDescriptionTask task = readAiDescriptionTask(taskId);
+        if (task == null) {
+            return;
+        }
+        task.setStatus(AiDescriptionTaskStatusEnum.FAILED.getValue());
+        task.setErrorMessage(StrUtil.blankToDefault(errorMessage, "AI处理失败，请重试"));
+        task.setUpdateTime(new Date());
+        saveAiDescriptionTask(task);
+        try {
+            if (StrUtil.isNotBlank(task.getTempFilePath())) {
+                Files.deleteIfExists(Paths.get(task.getTempFilePath()));
+            }
+        } catch (Exception e) {
+            log.warn("清理AI图片简介临时文件失败, taskId={}, path={}", taskId, task.getTempFilePath(), e);
+        }
+        try {
+            String messageJson = JSONUtil.createObj()
+                    .putOnce("type", "ai_description")
+                    .putOnce("taskId", task.getTaskId())
+                    .putOnce("status", task.getStatus())
+                    .putOnce("description", task.getDescription())
+                    .putOnce("errorMessage", task.getErrorMessage())
+                    .toString();
+            WebSocketServer.sendMessage(task.getUserId(), messageJson);
+        } catch (Exception e) {
+            log.warn("WebSocket推送AI图片简介失败结果失败, taskId={}", taskId, e);
         }
     }
 

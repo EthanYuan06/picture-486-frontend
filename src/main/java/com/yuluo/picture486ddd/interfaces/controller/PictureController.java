@@ -87,7 +87,7 @@ public class PictureController {
     }
 
     @GetMapping("/ai_generate_description/result")
-    @Operation(summary = "查询AI图片简介生成结果")
+    @Operation(summary = "查询AI图片简介生成结果（兜底方案）")
     @SaSpaceCheckPermission(value = SpaceUserPermissionConstant.PICTURE_UPLOAD)
     public BaseResponse<AiDescriptionTaskVo> getAiGenerateDescriptionResult(@RequestParam("taskId") String taskId, HttpServletRequest request) {
         return ResultUtils.success(pictureApplicationService.getAiDescriptionResult(taskId, request));
