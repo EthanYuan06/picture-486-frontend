@@ -10,7 +10,6 @@ import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.dashscope.exception.UploadFileException;
 import com.alibaba.dashscope.utils.Constants;
 import com.yuluo.picture486ddd.domain.constant.AiPrompt;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -24,12 +23,18 @@ public class AiDescription {
         Constants.baseHttpApiUrl="https://dashscope.aliyuncs.com/api/v1";}
 
     public static String callWithLocalFile(String base64Image) throws ApiException, NoApiKeyException, UploadFileException, IOException {
+        return callWithBase64(base64Image, "image/png");
+    }
+
+    public static String callWithBase64(String base64Image, String mimeType) throws ApiException, NoApiKeyException, UploadFileException, IOException {
+        String safeMimeType = (mimeType == null || mimeType.isBlank()) ? "image/png" : mimeType;
+        String dataUrl = "data:" + safeMimeType + ";base64," + base64Image;
 
         MultiModalConversation conv = new MultiModalConversation();
         MultiModalMessage userMessage = MultiModalMessage.builder().role(Role.USER.getValue())
                 .content(Arrays.asList(
                         new HashMap<>() {{
-                            put("image", "data:image/png;base64," + base64Image);
+                            put("image", dataUrl);
                         }},
                         new HashMap<>() {{
                             put("text", AiPrompt.IMAGE_DESCRIPTION);

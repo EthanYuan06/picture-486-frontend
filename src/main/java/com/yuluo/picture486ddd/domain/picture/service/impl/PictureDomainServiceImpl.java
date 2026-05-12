@@ -33,6 +33,7 @@ import com.yuluo.picture486ddd.infrastructure.mapper.PictureMapper;
 import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.infrastructure.utils.PictureUtil;
+import com.yuluo.picture486ddd.infrastructure.websocket.WebSocketServer;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -736,28 +740,47 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         String originalFilename = multipartFile.getOriginalFilename();
         String suffix = FileUtil.getSuffix(originalFilename);
         String taskId = RandomUtil.randomString(24);
-        String uploadPath = String.format("ai-description/%s/%s.%s", loginUser.getId(), taskId, suffix);
-        File tempFile = null;
+        if (StrUtil.isBlank(suffix)) {
+            suffix = "png";
+        }
+        String mimeType = multipartFile.getContentType();
+        if (StrUtil.isBlank(mimeType)) {
+            if ("jpg".equalsIgnoreCase(suffix) || "jpeg".equalsIgnoreCase(suffix)) {
+                mimeType = "image/jpeg";
+            } else if ("webp".equalsIgnoreCase(suffix)) {
+                mimeType = "image/webp";
+            } else {
+                mimeType = "image/png";
+            }
+        }
+        Path tempPath = null;
         try {
-            tempFile = File.createTempFile("ai_description_", "." + suffix);
-            multipartFile.transferTo(tempFile);
-            cosManager.putObject(uploadPath, tempFile);
+            Path baseDir = Paths.get(System.getProperty("java.io.tmpdir"), "ai-description", String.valueOf(loginUser.getId()));
+            Files.createDirectories(baseDir);
+            tempPath = baseDir.resolve(taskId + "." + suffix);
+            multipartFile.transferTo(tempPath);
 
             Date now = new Date();
             AiDescriptionTask task = new AiDescriptionTask();
             task.setTaskId(taskId);
             task.setUserId(loginUser.getId());
             task.setStatus(AiDescriptionTaskStatusEnum.PROCESSING.getValue());
-            task.setCosObjectKey(uploadPath);
+            task.setTempFilePath(tempPath.toString());
+            task.setMimeType(mimeType);
             task.setCreateTime(now);
             task.setUpdateTime(now);
             saveAiDescriptionTask(task);
             return task;
         } catch (Exception e) {
             log.error("创建AI图片简介任务失败", e);
+            if (tempPath != null) {
+                try {
+                    Files.deleteIfExists(tempPath);
+                } catch (Exception ex) {
+                    log.warn("清理AI图片简介临时文件失败, taskId={}, path={}", taskId, tempPath, ex);
+                }
+            }
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "创建AI任务失败");
-        } finally {
-            deleteTempFile(tempFile);
         }
     }
 
@@ -778,15 +801,15 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
             log.warn("AI图片简介任务不存在, taskId={}", taskId);
             return;
         }
+        String messageJson = null;
         try {
-            var cosObject = cosManager.getPictureObject(task.getCosObjectKey());
-            try (var objectContent = cosObject.getObjectContent()) {
-            String base64Image = PictureUtil.convertInputStreamToBase64(objectContent);
-            String description = AiDescription.callWithLocalFile(base64Image);
+            String tempFilePath = task.getTempFilePath();
+            ThrowUtils.throwIf(StrUtil.isBlank(tempFilePath), ErrorCode.SYSTEM_ERROR, "任务图片不存在");
+            String base64Image = PictureUtil.convertLocalImageToBase64(new File(tempFilePath));
+            String description = AiDescription.callWithBase64(base64Image, task.getMimeType());
             task.setStatus(AiDescriptionTaskStatusEnum.SUCCESS.getValue());
             task.setDescription(description);
             task.setErrorMessage(null);
-            }
         } catch (Exception e) {
             log.error("AI图片描述生成失败, taskId={}", taskId, e);
             task.setStatus(AiDescriptionTaskStatusEnum.FAILED.getValue());
@@ -795,9 +818,23 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
             task.setUpdateTime(new Date());
             saveAiDescriptionTask(task);
             try {
-                cosManager.deleteObject(task.getCosObjectKey());
+                if (StrUtil.isNotBlank(task.getTempFilePath())) {
+                    Files.deleteIfExists(Paths.get(task.getTempFilePath()));
+                }
             } catch (Exception e) {
-                log.warn("清理AI图片简介源文件失败, taskId={}, key={}", taskId, task.getCosObjectKey(), e);
+                log.warn("清理AI图片简介临时文件失败, taskId={}, path={}", taskId, task.getTempFilePath(), e);
+            }
+            try {
+                messageJson = JSONUtil.createObj()
+                        .putOnce("type", "ai_description")
+                        .putOnce("taskId", task.getTaskId())
+                        .putOnce("status", task.getStatus())
+                        .putOnce("description", task.getDescription())
+                        .putOnce("errorMessage", task.getErrorMessage())
+                        .toString();
+                WebSocketServer.sendMessage(task.getUserId(), messageJson);
+            } catch (Exception e) {
+                log.warn("WebSocket推送AI图片简介结果失败, taskId={}, message={}", taskId, messageJson, e);
             }
         }
     }

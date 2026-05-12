@@ -22,6 +22,10 @@ public class AiDescriptionTask implements Serializable {
 
     private String cosObjectKey;
 
+    private String tempFilePath;
+
+    private String mimeType;
+
     private Date createTime;
 
     private Date updateTime;

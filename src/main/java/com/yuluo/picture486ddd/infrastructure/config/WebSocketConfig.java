@@ -1,5 +1,6 @@
 package com.yuluo.picture486ddd.infrastructure.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
@@ -10,10 +11,8 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 @Configuration
 public class WebSocketConfig {
 
-    /**
-     * 注入 ServerEndpointExporter，自动注册使用 @ServerEndpoint 注解的 Bean
-     */
     @Bean
+    @ConditionalOnProperty(name = "websocket.enabled", havingValue = "true", matchIfMissing = true)
     public ServerEndpointExporter serverEndpointExporter() {
         return new ServerEndpointExporter();
     }
