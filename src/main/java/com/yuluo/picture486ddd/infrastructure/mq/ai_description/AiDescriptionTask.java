@@ -1,4 +1,4 @@
-package com.yuluo.picture486ddd.domain.picture.entity;
+package com.yuluo.picture486ddd.infrastructure.mq.ai_description;
 
 import lombok.Data;
 

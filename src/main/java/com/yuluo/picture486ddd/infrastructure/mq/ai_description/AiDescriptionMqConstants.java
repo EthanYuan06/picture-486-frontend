@@ -1,4 +1,4 @@
-package com.yuluo.picture486ddd.domain.picture.constant;
+package com.yuluo.picture486ddd.infrastructure.mq.ai_description;
 
 /**
  * RabbitMQ 常量

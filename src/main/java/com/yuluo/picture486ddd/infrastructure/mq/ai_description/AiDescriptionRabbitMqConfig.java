@@ -1,6 +1,5 @@
-package com.yuluo.picture486ddd.infrastructure.config;
+package com.yuluo.picture486ddd.infrastructure.mq.ai_description;
 
-import com.yuluo.picture486ddd.domain.picture.constant.AiDescriptionMqConstants;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;

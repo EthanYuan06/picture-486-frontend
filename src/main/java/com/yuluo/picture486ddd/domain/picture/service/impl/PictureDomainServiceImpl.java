@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486ddd.domain.picture.repository.PictureRepository;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
-import com.yuluo.picture486ddd.domain.picture.entity.AiDescriptionTask;
+import com.yuluo.picture486ddd.infrastructure.mq.ai_description.AiDescriptionTask;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;

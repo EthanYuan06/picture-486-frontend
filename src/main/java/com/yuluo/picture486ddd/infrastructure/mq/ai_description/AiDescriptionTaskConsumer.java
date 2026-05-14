@@ -1,7 +1,6 @@
-package com.yuluo.picture486ddd.infrastructure.mq;
+package com.yuluo.picture486ddd.infrastructure.mq.ai_description;
 
 import com.rabbitmq.client.Channel;
-import com.yuluo.picture486ddd.domain.picture.constant.AiDescriptionMqConstants;
 import com.yuluo.picture486ddd.domain.picture.dto.AiDescriptionTaskMessage;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import jakarta.annotation.Resource;

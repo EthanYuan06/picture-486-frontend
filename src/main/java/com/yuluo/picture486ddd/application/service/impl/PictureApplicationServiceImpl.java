@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
+import com.yuluo.picture486ddd.infrastructure.mq.ai_description.AiDescriptionMqConstants;
 import com.yuluo.picture486ddd.shared.manager.auth.SpaceUserAuthManager;
 import com.yuluo.picture486ddd.shared.manager.auth.StpKit;
 import com.yuluo.picture486ddd.shared.manager.auth.model.SpaceUserPermissionConstant;
@@ -13,7 +14,7 @@ import com.yuluo.picture486ddd.domain.space.service.SpaceDomainService;
 import com.yuluo.picture486ddd.application.service.PictureApplicationService;
 import com.yuluo.picture486ddd.application.service.UserApplicationService;
 import com.yuluo.picture486ddd.domain.picture.entity.Picture;
-import com.yuluo.picture486ddd.domain.picture.entity.AiDescriptionTask;
+import com.yuluo.picture486ddd.infrastructure.mq.ai_description.AiDescriptionTask;
 import com.yuluo.picture486ddd.domain.picture.service.PictureDomainService;
 import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.infrastructure.common.DeleteRequest;
@@ -248,8 +249,8 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
             message.setTaskId(task.getTaskId());
             message.setAttempt(0);
             rabbitTemplate.convertAndSend(
-                    com.yuluo.picture486ddd.domain.picture.constant.AiDescriptionMqConstants.EXCHANGE,
-                    com.yuluo.picture486ddd.domain.picture.constant.AiDescriptionMqConstants.ROUTING_KEY,
+                    AiDescriptionMqConstants.EXCHANGE,
+                    AiDescriptionMqConstants.ROUTING_KEY,
                     message
             );
         } else {
