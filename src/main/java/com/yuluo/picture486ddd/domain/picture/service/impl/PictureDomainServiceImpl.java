@@ -385,7 +385,7 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         }).toList();
         boolean result = this.updateBatchById(updatePictureList);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "批量审核失败");
-        // WebSocket通知
+        // 写入站内消息
         String reviewMsg = ObjUtil.defaultIfNull(reviewMessage, "无");
         for (Picture picture : reviewPictureList) {
             String message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",

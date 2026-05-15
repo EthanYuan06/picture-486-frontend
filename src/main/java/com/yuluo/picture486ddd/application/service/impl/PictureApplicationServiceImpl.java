@@ -150,7 +150,7 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
     @Override
     public void doPictureReview(PictureReviewRequest pictureReviewRequest, User loginUser) {
        pictureDomainService.doPictureReview(pictureReviewRequest, loginUser);
-        // WebSocket通知
+        // 写入站内消息
         Long userId = loginUser.getId();
         String reviewMessage = pictureReviewRequest.getReviewMessage();
         messageDomainService.sendMessage(userId, reviewMessage);
@@ -160,7 +160,7 @@ public class PictureApplicationServiceImpl extends ServiceImpl<PictureMapper, Pi
     @Transactional(rollbackFor = Exception.class)
     public void doPictureReviewByBatch(PictureReviewByBatchRequest pictureReviewByBatchRequest, User loginUser) {
         pictureDomainService.doPictureReviewByBatch(pictureReviewByBatchRequest, loginUser);
-        // WebSocket通知
+        // 写入站内消息
         Long userId = loginUser.getId();
         String reviewMessage = pictureReviewByBatchRequest.getReviewMessage();
         messageDomainService.sendMessage(userId, reviewMessage);

@@ -8,7 +8,6 @@ import com.yuluo.picture486ddd.interfaces.vo.message.MessageVo;
 import com.yuluo.picture486ddd.application.service.MessageApplicationService;
 import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.domain.user.entity.User;
-import com.yuluo.picture486ddd.infrastructure.websocket.WebSocketServer;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -37,8 +36,6 @@ public class MessageApplicationServiceImpl implements MessageApplicationService 
         String message = messageSendRequest.getMessage();
         Long userId = messageSendRequest.getUserId();
         messageDomainService.sendMessage(userId, message);
-        // 2. 调用 WebSocket 服务端发送消息
-        WebSocketServer.sendMessage(messageSendRequest.getUserId(), messageSendRequest.getMessage());
     }
 
     @Override

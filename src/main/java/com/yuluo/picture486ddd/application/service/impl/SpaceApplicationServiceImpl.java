@@ -22,7 +22,7 @@ import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486ddd.shared.manager.auth.SpaceUserAuthManager;
-import com.yuluo.picture486ddd.shared.manager.sharding.DynamicShardingManager;
+// import com.yuluo.picture486ddd.shared.manager.sharding.DynamicShardingManager;
 import com.yuluo.picture486ddd.infrastructure.mapper.SpaceMapper;
 import com.yuluo.picture486ddd.interfaces.assembler.SpaceAssembler;
 import com.yuluo.picture486ddd.interfaces.dto.space.SpaceAddRequest;
@@ -74,9 +74,9 @@ public class SpaceApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space>
     @Resource
     private SpaceUserAuthManager spaceUserAuthManager;
 
-    @Resource
-    @Lazy
-    private DynamicShardingManager dynamicShardingManager;
+    // @Resource
+    // @Lazy
+    // private DynamicShardingManager dynamicShardingManager;
 
     @Override
     public long addSpace(SpaceAddRequest spaceAddRequest, HttpServletRequest request) {
@@ -144,7 +144,7 @@ public class SpaceApplicationServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     boolean result = spaceUserApplicationService.save(spaceUser);
                     ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "创建团队成员记录失败");
                 }
-                dynamicShardingManager.createSpacePictureTable(space);
+                // dynamicShardingManager.createSpacePictureTable(space);
                 return space.getId();
             });
             return spaceId != null ? spaceId : 0;

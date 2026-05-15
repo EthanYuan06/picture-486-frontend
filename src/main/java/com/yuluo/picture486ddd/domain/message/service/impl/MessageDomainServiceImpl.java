@@ -16,6 +16,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -38,6 +39,8 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         sysMessage.setContent(message);
         sysMessage.setType(0); // 0-系统消息
         sysMessage.setStatus(0); // 0-未读
+        sysMessage.setCreateTime(new Date());
+        sysMessage.setUpdateTime(new Date());
         messageRepository.save(sysMessage);
     }
 
@@ -99,6 +102,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         }
         // 更新状态
         message.setStatus(1); // 已读
+        message.setUpdateTime(new Date());
         return messageRepository.updateById(message);
     }
 
@@ -110,6 +114,7 @@ public class MessageDomainServiceImpl implements MessageDomainService {
         // 更新所有未读消息为已读
         Message message = new Message();
         message.setStatus(1);
+        message.setUpdateTime(new Date());
         QueryWrapper<Message> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("receiveUserId", loginUser.getId());
         queryWrapper.eq("status", 0); // 仅更新未读的
