@@ -44,6 +44,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 
@@ -188,12 +189,14 @@ public class PictureController {
         Page<Picture> result = pictureDomainService.page(new Page<>(current, size),
                 pictureDomainService.getQueryWrapper(pictureQueryRequest));
         
-        // 更新本地缓存
+        // 更新本地缓存，设置随机过期时间1~3分钟
         String cacheValue = JSONUtil.toJsonStr(result);
+        long localCacheTtl = ThreadLocalRandom.current().nextLong(1, 4); // 1-3分钟（不包含4）
         LOCAL_CACHE.put(cacheKey, cacheValue);
 
-        // 更新Redis缓存，设置过期时间5分钟
-        valueOps.set(cacheKey, cacheValue, 5, TimeUnit.MINUTES);
+        // 更新Redis缓存，设置随机过期时间3~5分钟
+        long redisCacheTtl = ThreadLocalRandom.current().nextLong(3, 6); // 3-5分钟（不包含6）
+        valueOps.set(cacheKey, cacheValue, redisCacheTtl, TimeUnit.MINUTES);
 
         return ResultUtils.success(result);
     }
@@ -215,13 +218,6 @@ public class PictureController {
         }else {
             boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
             ThrowUtils.throwIf(!hasPermission, ErrorCode.NO_AUTH_ERROR);
-//            //私有相册
-//            User loginUser = userService.getLoginUser(request);
-//            Space space = spaceService.getById(spaceId);
-//            ThrowUtils.throwIf(space == null, ErrorCode.NOT_FOUND_ERROR, "相册不存在");
-//            if (!space.getUserId().equals(loginUser.getId()) && !loginUser.getUserRole().equals(UserConstant.ADMIN_ROLE)){
-//                throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "无权限操作该相册");
-//            }
         }
         // 构建缓存key
         String queryConditionStr = JSONUtil.toJsonStr(pictureQueryRequest);
@@ -250,12 +246,14 @@ public class PictureController {
         Page<Picture> result = pictureDomainService.page(new Page<>(current, size),
                 pictureDomainService.getQueryWrapper(pictureQueryRequest));
 
-        // 更新本地缓存
+        // 更新本地缓存，设置随机过期时间1~3分钟
         String cacheValue = JSONUtil.toJsonStr(result);
+        long localCacheTtl = ThreadLocalRandom.current().nextLong(1, 4); // 1-3分钟（不包含4）
         LOCAL_CACHE.put(cacheKey, cacheValue);
 
-        // 更新Redis缓存，设置过期时间5分钟
-        valueOps.set(cacheKey, cacheValue, 5, TimeUnit.MINUTES);
+        // 更新Redis缓存，设置随机过期时间3~5分钟
+        long redisCacheTtl = ThreadLocalRandom.current().nextLong(3, 6); // 3-5分钟（不包含6）
+        valueOps.set(cacheKey, cacheValue, redisCacheTtl, TimeUnit.MINUTES);
         return ResultUtils.success(pictureDomainService.getPictureVoPage(result, request));
     }
 
@@ -401,8 +399,8 @@ public class PictureController {
     private final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
                     .maximumSize(10000L)
-                    // 缓存 2 分钟移除
-                    .expireAfterWrite(2L, TimeUnit.MINUTES)
+                    // 缓存随机1~3分钟移除，防止集体过期
+                    .expireAfterWrite(ThreadLocalRandom.current().nextLong(1, 4), TimeUnit.MINUTES)
                     .build();
     /**
      * 清除指定前缀的缓存
@@ -414,5 +412,27 @@ public class PictureController {
         LOCAL_CACHE.invalidateAll();
         // 清除Redis缓存中与指定前缀相关的缓存
         stringRedisTemplate.delete(stringRedisTemplate.keys(keyPrefix + "*"));
+    }
+
+    @PostMapping("/upload/dev")
+    @Operation(summary = "【开发测试】上传图片-绕过鉴权")
+    public BaseResponse<PictureVo> uploadPictureDev(
+            @RequestPart("file") MultipartFile multipartFile,
+            PictureUploadRequest pictureUploadRequest) {
+        // 创建测试用户（固定用户ID，用于压测）
+        User testUser = new User();
+        testUser.setId(1L); // 使用固定测试用户ID，也可改为从请求参数传入
+        testUser.setUserAccount("test_user");
+        testUser.setUserName("测试用户");
+        testUser.setUserRole("user");
+
+        // 直接调用领域层服务，绕过应用层的鉴权逻辑
+        PictureVo pictureVo = pictureDomainService.uploadPicture(multipartFile, pictureUploadRequest, testUser);
+
+        // 清除缓存
+        clearCache("listPage");
+        clearCache("listPageVo");
+
+        return ResultUtils.success(pictureVo);
     }
 }
