@@ -20,7 +20,7 @@
 
 ### 🏗️ 项目架构
 
-![subarupic](D:\Download\subarupic.png)
+![subarupic](./images/subarupic.png)
 
 ### ⚡ 核心业务功能
 
