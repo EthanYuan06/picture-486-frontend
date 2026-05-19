@@ -20,9 +20,7 @@
 
 ### 🏗️ 项目架构
 
-![昴云相册.drawio](D:\Download\昴云相册.drawio.png)
-
-
+![subarupic](D:\Download\subarupic.png)
 
 ### ⚡ 核心业务功能
 
