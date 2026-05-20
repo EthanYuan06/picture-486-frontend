@@ -9,6 +9,12 @@ export interface MessageVo {
     updateTime: string;
 }
 
+export interface MessageAddRequest {
+    receiveUserId: string | number;
+    title: string;
+    content: string;
+}
+
 export interface MessageQueryRequest {
     current?: number;
     pageSize?: number;

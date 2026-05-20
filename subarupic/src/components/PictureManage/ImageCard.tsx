@@ -12,8 +12,9 @@ interface ImageCardProps {
 }
 
 const ImageCard: React.FC<ImageCardProps> = ({ picture, selected, deleting, onSelect, onClick }) => {
-  const getStatusBadge = (status: PictureReviewStatus) => {
-    switch (status) {
+  const getStatusBadge = (status: any) => {
+    const s = Number(status);
+    switch (s) {
       case PictureReviewStatus.PASS:
         return (
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/30 backdrop-blur-md text-green-400 text-xs font-medium">

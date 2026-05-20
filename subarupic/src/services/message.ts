@@ -1,8 +1,20 @@
 import { API_ROUTES } from '../config';
 import { useAuthStore } from '../stores/auth';
-import type { MessageVo, MessageQueryRequest } from '../types/message';
+import type { MessageVo, MessageQueryRequest, MessageAddRequest } from '../types/message';
 
 type ApiResp<T> = { code: number; data: T; message?: string };
+
+export async function sendMessage(params: MessageAddRequest): Promise<boolean> {
+    const auth = useAuthStore.getState();
+    const resp = await fetch(API_ROUTES.MESSAGE_SEND, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...auth.csrfHeader },
+        body: JSON.stringify(params),
+        credentials: 'include',
+    });
+    const data: ApiResp<boolean> = await resp.json();
+    return data.code === 0 && data.data;
+}
 
 export async function listMessageVoByPage(params: MessageQueryRequest): Promise<{ records: MessageVo[]; total: number }> {
     const auth = useAuthStore.getState();

@@ -121,10 +121,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
   const handleLogout = async () => {
     await postLogout();
     onChangeView(ViewState.LOGIN);
+    navigate('/', { replace: true });
   };
 
-  // Filter menu items based on role
   const isAdmin = !!userInfo?.roles?.includes('admin');
+
+  // Check if current page is allowed for current user
+  useEffect(() => {
+    if (loading) return;
+    const currentItem = MENU_ITEMS.find(item => item.id === activeTab);
+    if (currentItem?.adminOnly && !isAdmin) {
+      navigate('/dashboard/gallery', { replace: true });
+    }
+  }, [activeTab, isAdmin, navigate, loading]);
+
+  // Filter menu items based on role
   const visibleMenuItems = MENU_ITEMS.filter(item =>
     !item.adminOnly || isAdmin
   );
@@ -142,6 +153,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
 
   const pageName = getPageName(activeTab);
   const navTitle = pageName ? `昴云-${pageName}` : '昴云相册';
+
+  const isTabAllowed = (tabId: string) => {
+    const item = MENU_ITEMS.find(m => m.id === tabId);
+    if (item?.adminOnly && !isAdmin) return false;
+    return true;
+  };
 
   useEffect(() => {
     document.title = navTitle;
@@ -330,7 +347,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
           <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none -z-10" />
 
           <div className="max-w-7xl mx-auto h-full relative z-0">
-            {activeTab === 'gallery' ? (
+            {!isTabAllowed(activeTab) ? (
+              <div className="flex flex-col items-center justify-center h-full text-[var(--text-secondary)]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
+                <p>正在跳转...</p>
+              </div>
+            ) : activeTab === 'gallery' ? (
               <HomePage />
             ) : activeTab === 'img-mgmt' ? (
               <PictureManagePage />

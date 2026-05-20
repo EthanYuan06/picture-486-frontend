@@ -1,6 +1,6 @@
 import React from 'react';
-import { Picture } from '../../types/picture';
-import { Check, Edit } from 'lucide-react';
+import { Picture, PictureReviewStatus } from '../../types/picture';
+import { Check, Edit, Clock, X } from 'lucide-react';
 import { toWebpUrl } from '../../utils/image';
 
 interface MyImageCardProps {
@@ -12,6 +12,33 @@ interface MyImageCardProps {
 }
 
 const MyImageCard: React.FC<MyImageCardProps> = ({ picture, selected, deleting, onSelect, onClick }) => {
+  const getStatusBadge = (status: any) => {
+    const s = Number(status);
+    switch (s) {
+      case PictureReviewStatus.PASS:
+        return (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/30 backdrop-blur-md text-green-400 text-xs font-medium">
+            <Check size={12} />
+            <span>已通过</span>
+          </div>
+        );
+      case PictureReviewStatus.REJECT:
+        return (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur-md text-red-400 text-xs font-medium">
+            <X size={12} />
+            <span>已拒绝</span>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 backdrop-blur-md text-yellow-400 text-xs font-medium">
+            <Clock size={12} />
+            <span>待审核</span>
+          </div>
+        );
+    }
+  };
+
   const formatSize = (size?: number) => {
     if (!size) return '0 B';
     if (size < 1024) return `${size} B`;
@@ -60,6 +87,11 @@ const MyImageCard: React.FC<MyImageCardProps> = ({ picture, selected, deleting, 
         `}>
           <Check size={14} strokeWidth={3} />
         </div>
+      </div>
+
+      {/* Status Badge (Top Right) */}
+      <div className="absolute top-3 right-3 z-10">
+        {getStatusBadge(picture.reviewStatus ?? (picture as any).status)}
       </div>
 
       {/* Hover Overlay with Action Button */}

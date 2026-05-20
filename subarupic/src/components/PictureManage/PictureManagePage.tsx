@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Picture, PictureReviewStatus, PictureQueryRequest, PictureReviewBatchRequest, PictureReviewSingleRequest, PictureDeleteBatchRequest } from '../../types/picture';
 import { listPictureByPage, doPictureReview, doPictureReviewBatch, deletePicture, deletePictureBatch } from '../../services/picture';
+import { sendMessage } from '../../services/message';
 import { useUserMapStore } from '../../stores/userMap';
 import FilterHeader from './FilterHeader';
 import ImageGrid from './ImageGrid';
@@ -118,6 +119,20 @@ const PictureManagePage: React.FC = () => {
 
     const success = await doPictureReviewBatch(req);
     if (success) {
+      // 发送消息通知
+      const messagePromises = selectedIds.map(id => {
+        const p = pictures.find(pic => pic.id === id);
+        if (!p) return Promise.resolve(true);
+        return sendMessage({
+          receiveUserId: p.userId,
+          title: status === PictureReviewStatus.PASS ? '图片审核通过' : '图片审核未通过',
+          content: status === PictureReviewStatus.PASS
+            ? `您上传的图片 [${p.name}] 已通过审核`
+            : `您上传的图片 [${p.name}] 未通过审核，原因：${req.reviewMessage}`
+        });
+      });
+      await Promise.all(messagePromises);
+
       // Refresh to get updated statuses
       await fetchData();
       setSelectedIds([]);
@@ -173,6 +188,18 @@ const PictureManagePage: React.FC = () => {
 
     const success = await doPictureReview(req);
     if (success) {
+      // 发送消息通知
+      const picture = pictures.find(p => p.id === id);
+      if (picture) {
+        await sendMessage({
+          receiveUserId: picture.userId,
+          title: status === PictureReviewStatus.PASS ? '图片审核通过' : '图片审核未通过',
+          content: status === PictureReviewStatus.PASS
+            ? `您上传的图片 [${picture.name}] 已通过审核`
+            : `您上传的图片 [${picture.name}] 未通过审核，原因：${message}`
+        });
+      }
+
       setReviewModalPicture(null);
       fetchData(); // Refresh list
     } else {
