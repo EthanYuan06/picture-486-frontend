@@ -1,0 +1,104 @@
+[33medb570e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31mpicture-486-frontend/main[m[33m, [m[1;31mpicture-486-frontend/HEAD[m[33m)[m 111
+[33m1097480[m fix 1、登录普通账户时仍停留管理界面 2、“我的发布”看不见自己上传的图片，现已更改
+[33m6b23bfd[m 修改注册页面密码文本框提示 重构代码目录
+[33m412df4f[m Delete subarupic.zip
+[33mabe0fa8[m 轮询AI生成简介功能
+[33mb7c7cd9[m fix 无法在“我的发布”查看自己上传的图片
+[33md87798a[m 修改无法将审核消息写入数据库、无法收到目标用户id的问题
+[33maae5cd9[m readme修复图片无法显示的问题
+[33m265f700[m readme修复图片无法显示的问题
+[33m438607c[m 1、更换RabbitMQ配置 2、readme修复图片无法显示的问题
+[33m488c6b4[m 更改多级缓存为随机TTL，将缓存命中率提升至100%
+[33m2881d34[m 更改多级缓存为随机TTL，将缓存命中率提升至100%
+[33md4d7154[m 移除分库分表功能，业务层临时解决无法自动更新时间问题，手动添加创建时间、更新时间
+[33m2b92dce[m 将RabbitMQ相关配置移动到mq目录下，方便管理
+[33m0f9a48f[m 使用RabbitMQ优化AI查询接口，保障服务稳定
+[33ma7689a1[m AI生成简介：去掉上传下载COS部分，优化整体链路，降低开销
+[33m6a9231e[m 解决无法多端登录的问题
+[33m570ef31[m 虚拟线程测试
+[33m8f6d433[m add 图片N+1性能优化压测
+[33mc21ec02[m fix 停用分库分表
+[33maa83ad1[m fix 重构公共服务包
+[33mcccee44[m fix 重构Space的Controller
+[33m7509fc8[m fix 重构SpaceUser的Controller
+[33m3ece51d[m fix 重构WebSocket模块 重构Space、SpaceUser模块
+[33mf89e78e[m fix 重构WebSocket模块 重构Space、SpaceUser模块
+[33m3e77b22[m fix 重构WebSocket模块
+[33meb21550[m fix 重构WebSocket模块
+[33m927b597[m fix 将AI功能单独封装为一个模块
+[33me9a6343[m fix 退出登录后因为缓存未清除无法登录的问题
+[33m0652332[m add 上传图片时AI生成简介
+[33mb07d654[m fix 修改用户信息不生效的问题 add 启用分库分表
+[33m2f8c4f3[m fix 重构图片服务代码
+[33m9603e4b[m fix 重构用户服务代码
+[33m991269b[m add WebSocket消息中心功能，实现了审核通过后系统自动发送审核信息
+[33m4ab3adf[m fix 取消仅相册创建人才能上传图片的校验（现已将个人相册权限设置为仅创建人和管理员可进入）
+[33m60cc145[m add 分库分表 fix 修复本地多处登录因登录态存在导致Sa-Token和springsession重复调用导致栈溢出的问题
+[33m123c732[m add 给图片接口、多人相册接口进行注解鉴权
+[33ma2ba1ad[m add 获取权限校验列表
+[33mf837d60[m add 权限校验配置文件及数据模型
+[33m6df30ea[m add 创建多人相册时自动添加创建者记录
+[33m54c02a3[m add 相册成员管理业务逻辑
+[33m40d0eb7[m add 多人相册的创建
+[33m6d5e44c[m add 缓存读取时，反序列化的数据类型从JSONObject转换为Page<Picture>
+[33m55d1e37[m add 相册封面上传方法
+[33m6338487[m add 相册封面参数 fix 部分名词：空间->相册
+[33m40d5fc3[m add 限制头像上传文件不超过1MB
+[33m633eb08[m fix 单个图片最大支持10MB->15MB 同时上传最大数量：20->10
+[33m4eb98db[m fix 1、默认相册封面链接 2、用户相册页的权限校验逻辑（修复管理员无法访问的问题）
+[33macf2f81[m add 批量审核
+[33m37a9910[m fix 0~10MB分五档进行分析
+[33m574c6b7[m fix 单个图片最大15MB -> 10MB
+[33mc20bc9c[m add 新增“待审核”统计个数 fix 全相册总图片数量扫描到公共图片的问题
+[33m1510c8c[m fix 新增全相册分析的判断条件
+[33m830bc61[m add 1.相册资源使用分析 2.相册图片分类分析 3.相册图片标签分析 4.相册图片大小分析 5.用户上传行为分析 6.相册使用排行分析
+[33m384e718[m add 颜色十六进制代码转换RGBA工具类 add 相册分析通用方法和父请求类 fix 封装校验用户是否有操作相册的权限的方法
+[33me8c0966[m add 删除相册时，填写确认删除文本，删除时先清空相册下所有图片再删除相册
+[33m17fd270[m fix 将单次请求和批量上传总大小提升为100MB
+[33m268b7b2[m add 批量上传：筛选符合要求的图片 add 单个上传：判断是否符合格式要求
+[33me657d23[m add 最大同时上传图片个数10 -> 20 add 批量删除计时（优化前）
+[33m1cc9da1[m add 批量编辑图片 add 批量删除图片
+[33m90d3d63[m add 批量编辑 add 批量上传
+[33m921c249[m fix 时间范围查询格式优化
+[33m9fbbc1f[m add 相册封面回显
+[33m342da54[m fix 判断图片上传路径 fix 术语：空间->相册 fix 管理员无限创建空间，用户最多创建5个空间
+[33me1827ca[m fix 修改了“是否创建空间”的参数为isAdd
+[33m780859a[m add 对空间的增删改查 fix 将缓存逻辑封装为管理类 del 目前禁用缓存
+[33mf8d01ed[m add 对空间的增删改查 fix 将缓存逻辑封装为管理类 del 目前禁用缓存
+[33m5309b69[m add 创建空间 add Redisson + 事务限制用户仅能创建一个空间
+[33m16d497e[m add 创建空间 add Redisson + 事务限制用户仅能创建一个空间
+[33md4b2cc9[m fix 更改注解的作者名称 add 空间管理的删改查功能
+[33m626ecee[m del 移除定时物理删除功能 add 空间模块的基础类
+[33mb72189f[m del 移除定时物理删除功能 add 空间模块的基础类
+[33m33b4559[m fix 分页查询缓存带来的脏数据问题 fix 定时清理已删除数据任务30d -> 1d add 新增审核状态查询条件
+[33m9c2a3aa[m fix 开放用户修改信息权限 fix webp图处理为相对质量70 -> 85
+[33m26021b9[m add 支持创建时间、编辑时间的时间范围排序
+[33m869c883[m add 头像上传接口 fix 登录态存入Redis并设置30天有效期
+[33m2a90cf4[m add 图片管理新增多级缓存
+[33ma9e3d9f[m add 30天删除已被标记删除的数据，并删除存储桶的文件
+[33m08cc535[m add 异步即时清除对象存储的原图、缩略图、webp图
+[33m9649026[m add 上传缩略图、webp图 add 返回原图url及信息、缩略图url
+[33m07d8741[m add 上传图片自动处理为相对质量值70
+[33m6c85c79[m add 上传文件时自动处理webp格式（未进行质量转换）
+[33mccf2422[m add 图片库查询优化 Redis + caffeine 多级缓存
+[33m1fce66e[m fix cookie与session持久态不一致的问题
+[33m3ad0858[m add url上传图片 add 通用上传图片模板
+[33m4e5b443[m add 图片审核功能
+[33me9dbb89[m add 重置密码
+[33m0bd5669[m fix 最大请求体积和单个文件体积由10MB改为15MB add 文件上传配置Config
+[33m4eac722[m fix 临时标签内容
+[33mc5ff9a6[m add 管理员对图片的增删改查
+[33meb73f12[m add 图片增删改查数据模型 add UserService的校验管理员方法
+[33m37f293d[m add 图片上传
+[33mb8ced79[m add 图片数据模型
+[33m722be3e[m add COS客户端配置 add 文件上传下载测试接口
+[33m2fc36eb[m fix 删掉editTime字段
+[33md609ccf[m add 前后端id数据精度转换配置 add 几个增删改查的传递参数 add 升级账户密码的校验复杂度 add mybatis-plus的分页插件配置
+[33m0232f0c[m fix 优化登录和注册的错误提示
+[33m765cf46[m fix 解决注册时权限校验冲突
+[33mebdb450[m add dto类整合至user包
+[33m3e2a2d4[m add AOP权限校验
+[33mcdd483a[m add 用户登出
+[33m315d50b[m add 用户登录，获取当前用户
+[33m0bc0543[m fix 密码长度规则 add 注册接口swagger标签
+[33md63d82d[m add 用户注册
