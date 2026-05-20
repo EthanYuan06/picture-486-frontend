@@ -8,6 +8,8 @@ import com.yuluo.picture486ddd.interfaces.vo.message.MessageVo;
 import com.yuluo.picture486ddd.application.service.MessageApplicationService;
 import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
 import com.yuluo.picture486ddd.domain.user.entity.User;
+import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
+import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -32,10 +34,29 @@ public class MessageApplicationServiceImpl implements MessageApplicationService 
      */
     @Override
     public void sendMessage(MessageSendRequest messageSendRequest) {
-        // 1.将消息存入数据库中
-        String message = messageSendRequest.getMessage();
-        Long userId = messageSendRequest.getUserId();
-        messageDomainService.sendMessage(userId, message);
+        // 参数校验
+        if (messageSendRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "请求参数不能为空");
+        }
+        
+        Long receiveUserId = messageSendRequest.getReceiveUserId();
+        String content = messageSendRequest.getContent();
+        String title = messageSendRequest.getTitle();
+        
+        log.info("准备发送消息 - receiveUserId: {}, title: {}, content: {}", receiveUserId, title, content);
+        
+        if (receiveUserId == null) {
+            log.error("发送消息失败：receiveUserId 为 null");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "接收用户ID不能为空");
+        }
+        
+        if (content == null || content.trim().isEmpty()) {
+            log.error("发送消息失败：消息内容为空");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "消息内容不能为空");
+        }
+        
+        // 将消息存入数据库中
+        messageDomainService.sendMessage(receiveUserId, title, content);
     }
 
     @Override

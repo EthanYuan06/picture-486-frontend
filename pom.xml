@@ -123,10 +123,10 @@
             <version>1.44.0</version>
         </dependency>
 
-        <!-- Sa-Token 集成 Redis（使用官方推荐的 JDK 序列化） -->
+        <!-- Sa-Token 集成 Redis（使用 JSON 序列化） -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-redis-template-jdk-serializer</artifactId>
+            <artifactId>sa-token-redis-jackson</artifactId>
             <version>1.44.0</version>
         </dependency>
 
@@ -150,7 +150,6 @@
         <!--    <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>-->
         <!--    <version>5.2.0</version>-->
         <!--</dependency>-->
-
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>

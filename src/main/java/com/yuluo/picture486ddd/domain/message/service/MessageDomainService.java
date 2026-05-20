@@ -13,9 +13,10 @@ public interface MessageDomainService {
     /**
      * 给指定用户发送消息
      * @param userId 用户ID
-     * @param message 消息内容
+     * @param title 消息标题
+     * @param content 消息内容
      */
-    void sendMessage(Long userId, String message);
+    void sendMessage(Long userId, String title, String content);
 
     /**
      * 分页获取消息列表

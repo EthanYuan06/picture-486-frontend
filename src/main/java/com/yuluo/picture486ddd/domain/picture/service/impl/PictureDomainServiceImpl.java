@@ -349,6 +349,20 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         updatePicture.setReviewTime(new Date());
         boolean result = this.updateById(updatePicture);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR, "操作失败");
+        
+        // 写入站内消息
+        if (oldPicture.getUserId() != null) {
+            PictureReviewStatusEnum statusEnum = PictureReviewStatusEnum.getEnumByValue(reviewStatus);
+            String reviewMsg = ObjUtil.defaultIfNull(pictureReviewRequest.getReviewMessage(), "无");
+            String title = "图片审核" + statusEnum.getText();
+            String message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
+                    id,
+                    statusEnum.getText(),
+                    reviewMsg);
+            messageDomainService.sendMessage(oldPicture.getUserId(), title, message);
+        } else {
+            log.warn("图片ID: {} 的userId为空，无法发送审核通知", id);
+        }
     }
 
     @Override
@@ -388,11 +402,16 @@ public class PictureDomainServiceImpl extends ServiceImpl<PictureMapper, Picture
         // 写入站内消息
         String reviewMsg = ObjUtil.defaultIfNull(reviewMessage, "无");
         for (Picture picture : reviewPictureList) {
-            String message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
-                    picture.getId(),
-                    reviewStatusEnum.getText(),
-                    reviewMsg);
-            messageDomainService.sendMessage(picture.getUserId(), message);
+            if (picture.getUserId() != null) {
+                String title = "图片审核" + reviewStatusEnum.getText();
+                String message = String.format("您的图片（ID: %d）审核状态已更新为：%s，备注：%s",
+                        picture.getId(),
+                        reviewStatusEnum.getText(),
+                        reviewMsg);
+                messageDomainService.sendMessage(picture.getUserId(), title, message);
+            } else {
+                log.warn("图片ID: {} 的userId为空，无法发送审核通知", picture.getId());
+            }
         }
     }
 

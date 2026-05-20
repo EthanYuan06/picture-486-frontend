@@ -4,13 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yuluo.picture486ddd.domain.message.repository.MessageRepository;
 import com.yuluo.picture486ddd.domain.message.service.MessageDomainService;
+import com.yuluo.picture486ddd.domain.user.entity.User;
+import com.yuluo.picture486ddd.domain.user.repository.UserRepository;
 import com.yuluo.picture486ddd.infrastructure.exception.BusinessException;
 import com.yuluo.picture486ddd.infrastructure.exception.ErrorCode;
 import com.yuluo.picture486ddd.infrastructure.exception.ThrowUtils;
 import com.yuluo.picture486ddd.infrastructure.mapper.MessageMapper;
 import com.yuluo.picture486ddd.interfaces.dto.message.MessageQueryRequest;
 import com.yuluo.picture486ddd.domain.message.entity.Message;
-import com.yuluo.picture486ddd.domain.user.entity.User;
 import com.yuluo.picture486ddd.interfaces.vo.message.MessageVo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -29,14 +30,34 @@ public class MessageDomainServiceImpl implements MessageDomainService {
     private MessageRepository messageRepository;
     @Resource
     private MessageMapper messageMapper;
+    @Resource
+    private UserRepository userRepository;
 
     @Override
-    public void sendMessage(Long userId, String message) {
+    public void sendMessage(Long userId, String title, String content) {
+        // 参数校验
+        if (userId == null) {
+            log.error("发送消息失败：接收用户ID为空");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "接收用户ID不能为空");
+        }
+        
+        if (content == null || content.trim().isEmpty()) {
+            log.error("发送消息失败：消息内容为空");
+            throw new BusinessException(ErrorCode.PARAMS_ERROR, "消息内容不能为空");
+        }
+        
+        // 检查用户是否存在
+        User user = userRepository.getById(userId);
+        if (user == null) {
+            log.warn("发送消息失败：用户ID {} 不存在", userId);
+            return;
+        }
+        
         // 无论用户是否在线，先持久化消息到数据库
         Message sysMessage = new Message();
         sysMessage.setReceiveUserId(userId);
-        sysMessage.setTitle("系统通知"); // 默认标题
-        sysMessage.setContent(message);
+        sysMessage.setTitle(title != null ? title : "系统通知");
+        sysMessage.setContent(content);
         sysMessage.setType(0); // 0-系统消息
         sysMessage.setStatus(0); // 0-未读
         sysMessage.setCreateTime(new Date());

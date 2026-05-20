@@ -28,7 +28,7 @@ Thumbs.db
 
 # Environment
 .env
-application-local.yml
+application-dev.yml
 
 # Docker
 Dockerfile
