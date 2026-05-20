@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   Search
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { Picture, PictureQueryRequest } from '../types/picture';
 import { listPictureVoByPage, getPictureTagCategory } from '../services/picture';
 import { toWebpUrl } from '../utils/image';
@@ -32,6 +33,10 @@ const HomePage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagsExpanded, setTagsExpanded] = useState(false);
+
+  // Search Param
+  const [searchParams] = useSearchParams();
+  const searchText = searchParams.get('search') || '';
 
   // Detail Modal
   const [detailPicture, setDetailPicture] = useState<Picture | null>(null);
@@ -70,6 +75,7 @@ const HomePage: React.FC = () => {
 
       if (selectedCategory) queryParams.category = selectedCategory;
       if (selectedTags.length > 0) queryParams.tags = selectedTags;
+      if (searchText) queryParams.searchText = searchText;
 
       const res = await listPictureVoByPage(queryParams);
 
@@ -92,7 +98,7 @@ const HomePage: React.FC = () => {
       setIsFetching(false);
       setLoading(false);
     }
-  }, [selectedCategory, selectedTags]);
+  }, [selectedCategory, selectedTags, searchText]);
 
   // Initial Fetch & Filter Change
   useEffect(() => {
@@ -101,7 +107,7 @@ const HomePage: React.FC = () => {
     setPage(1);
     setHasMore(true);
     fetchPictures(1, true);
-  }, [selectedCategory, selectedTags, fetchPictures]);
+  }, [selectedCategory, selectedTags, searchText, fetchPictures]);
 
   // Fetch Users for Modal
   useEffect(() => {

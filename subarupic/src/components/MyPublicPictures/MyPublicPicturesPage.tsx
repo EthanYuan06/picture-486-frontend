@@ -232,21 +232,21 @@ const MyPublicPicturesPage: React.FC = () => {
 
         {/* Pagination */}
         {!loading && total > pageSize && (
-          <div className="flex justify-center py-8 gap-2">
+          <div className="flex justify-center py-8 gap-2 items-center">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(p => p - 1)}
-              className="px-4 py-2 bg-white/5 rounded-lg disabled:opacity-30 hover:bg-white/10 text-white text-sm"
+              className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg disabled:opacity-30 hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-sm transition-colors"
             >
               上一页
             </button>
-            <span className="px-4 py-2 text-gray-400 text-sm">
+            <span className="px-4 py-2 text-[var(--text-secondary)] text-sm font-medium">
               {currentPage} / {Math.ceil(total / pageSize)}
             </span>
             <button
               disabled={currentPage >= Math.ceil(total / pageSize)}
               onClick={() => setCurrentPage(p => p + 1)}
-              className="px-4 py-2 bg-white/5 rounded-lg disabled:opacity-30 hover:bg-white/10 text-white text-sm"
+              className="px-4 py-2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-lg disabled:opacity-30 hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-sm transition-colors"
             >
               下一页
             </button>

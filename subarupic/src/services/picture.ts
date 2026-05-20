@@ -273,7 +273,7 @@ export interface AiGenerateDescriptionTask {
   errorMessage: string | null;
 }
 
-export async function generatePictureDescription(file: File): Promise<string> {
+export async function generatePictureDescription(file: File): Promise<AiGenerateDescriptionTask> {
   const auth = useAuthStore.getState();
   const formData = new FormData();
   formData.append('file', file, file.name);
@@ -286,9 +286,11 @@ export async function generatePictureDescription(file: File): Promise<string> {
       credentials: 'include',
     });
     const data: ApiResp<AiGenerateDescriptionTask> = await resp.json();
-    const taskId = data.data?.taskId;
-    if (data.code === 0 && typeof taskId === 'string' && taskId) {
-      return taskId;
+    const task = data.data;
+    const taskId = task?.taskId;
+    const status = task?.status;
+    if (data.code === 0 && typeof taskId === 'string' && taskId && status === 'processing') {
+      return task;
     }
     throw new Error(data.message || 'AI生成简介任务提交失败');
   } catch (error) {

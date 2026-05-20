@@ -19,99 +19,10 @@ const MessageCenter: React.FC = () => {
     const userInfo = useAuthStore((s) => s.userInfo);
     const addToast = useToastStore((s) => s.addToast);
 
-    const isOpenRef = useRef(isOpen);
-
-    // Keep isOpenRef current
-    useEffect(() => {
-        isOpenRef.current = isOpen;
-    }, [isOpen]);
-
-    // WebSocket Connection
     useEffect(() => {
         if (!userInfo?.id) return;
-
-        // Fetch initial unread count
         fetchUnreadCount();
-
-        // Setup WebSocket
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        // 使用 /api/ws 前缀，确保开发环境(Vite Proxy)和生产环境(Nginx)都能正确转发
-        // 后端真实路径为 /api/ws/picture/review/{userId}
-        const wsUrl = `${protocol}//${host}/api/ws/picture/review/${userInfo.id}`;
-
-        let socket: WebSocket | null = null;
-        let reconnectTimer: NodeJS.Timeout;
-        let heartbeatTimer: NodeJS.Timeout;
-        let isUnmounting = false;
-
-        const connect = () => {
-            if (isUnmounting) return;
-
-            socket = new WebSocket(wsUrl);
-
-            socket.onopen = () => {
-                console.log('Message WebSocket Connected');
-                startHeartbeat();
-            };
-
-            socket.onmessage = (event) => {
-                // When new message arrives
-                const msg = event.data;
-                if (msg === 'PONG') return;
-
-                // Increment unread count
-                setUnreadCount((prev) => prev + 1);
-
-                // Add toast notification
-                addToast(msg, 'info', 5000, 'top-right');
-
-                // If dropdown is open, refresh list
-                if (isOpenRef.current) {
-                    fetchMessages(1, true);
-                }
-            };
-
-            socket.onclose = (event) => {
-                console.log('Message WebSocket Disconnected', event.code, event.reason);
-                stopHeartbeat();
-                // Simple reconnect logic, only if not unmounting
-                if (!isUnmounting) {
-                    reconnectTimer = setTimeout(connect, 5000);
-                }
-            };
-
-            socket.onerror = (error) => {
-                console.error('WebSocket Error:', error);
-                if (socket) socket.close();
-            };
-        };
-
-        const startHeartbeat = () => {
-            stopHeartbeat();
-            heartbeatTimer = setInterval(() => {
-                if (socket?.readyState === WebSocket.OPEN) {
-                    socket.send('PING');
-                }
-            }, 30000);
-        };
-
-        const stopHeartbeat = () => {
-            if (heartbeatTimer) clearInterval(heartbeatTimer);
-        };
-
-        connect();
-
-        return () => {
-            isUnmounting = true;
-            clearTimeout(reconnectTimer);
-            stopHeartbeat();
-            if (socket) {
-                socket.onclose = null; // Prevent reconnect trigger
-                socket.close();
-            }
-        };
-    }, [userInfo?.id]); // Only reconnect if user ID changes
+    }, [userInfo?.id]);
 
     const fetchUnreadCount = async () => {
         try {

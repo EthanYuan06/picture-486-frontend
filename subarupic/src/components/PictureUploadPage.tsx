@@ -6,6 +6,7 @@ import ImageZoomPreview from './ImageZoomPreview';
 import PortalSelect from './PortalSelect';
 import { useToastStore } from '../stores/toastStore';
 import { usePictureUploadStore } from '../stores/pictureUpload';
+import { useAuthStore } from '../stores/auth';
 
 // Types
 type UploadMode = 'initial' | 'single' | 'batch';
@@ -29,6 +30,10 @@ const PictureUploadPage: React.FC = () => {
   const addToast = useToastStore((state) => state.addToast);
   const pollingTimerRef = useRef<number | null>(null);
   const pollingTaskIdRef = useRef<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const wsPingTimerRef = useRef<number | null>(null);
+  const wsConnectTimerRef = useRef<number | null>(null);
+  const wsListeningTaskIdRef = useRef<string | null>(null);
 
   // Single Upload State
   const singleFile = usePictureUploadStore((state) => state.singleFile);
@@ -43,6 +48,31 @@ const PictureUploadPage: React.FC = () => {
   const setUploadDraft = usePictureUploadStore((state) => state.setDraft);
   const resetUploadDraft = usePictureUploadStore((state) => state.resetDraft);
   const [isSingleUploading, setIsSingleUploading] = useState(false);
+
+  const stopAiWebSocket = useCallback(() => {
+    if (wsConnectTimerRef.current !== null) {
+      window.clearTimeout(wsConnectTimerRef.current);
+      wsConnectTimerRef.current = null;
+    }
+    if (wsPingTimerRef.current !== null) {
+      window.clearInterval(wsPingTimerRef.current);
+      wsPingTimerRef.current = null;
+    }
+    if (wsRef.current) {
+      try {
+        wsRef.current.onopen = null;
+        wsRef.current.onmessage = null;
+        wsRef.current.onerror = null;
+        wsRef.current.onclose = null;
+        if (wsRef.current.readyState === WebSocket.CONNECTING || wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.close();
+        }
+      } catch {
+      } finally {
+        wsRef.current = null;
+      }
+    }
+  }, []);
 
   // Batch Upload State
   const [batchQueue, setBatchQueue] = useState<BatchFileItem[]>([]);
@@ -80,19 +110,26 @@ const PictureUploadPage: React.FC = () => {
 
   const resetSingleUploadDraft = useCallback(() => {
     stopAiPolling();
+    stopAiWebSocket();
     if (singlePreview.startsWith('blob:')) {
       URL.revokeObjectURL(singlePreview);
     }
     resetUploadDraft();
-  }, [resetUploadDraft, singlePreview, stopAiPolling]);
+  }, [resetUploadDraft, singlePreview, stopAiPolling, stopAiWebSocket]);
 
-  const pollAiResult = useCallback(async (currentTaskId: string) => {
+  const pollAiResult = useCallback(async (currentTaskId: string, options?: { intervalMs?: number; timeoutMs?: number }) => {
     if (pollingTaskIdRef.current === currentTaskId) return;
 
     pollingTaskIdRef.current = currentTaskId;
+    const intervalMs = typeof options?.intervalMs === 'number' ? options.intervalMs : 1000;
+    const timeoutMs = typeof options?.timeoutMs === 'number' ? options.timeoutMs : 30_000;
+    const startAt = Date.now();
 
     const poll = async () => {
       try {
+        if (Date.now() - startAt >= timeoutMs) {
+          throw new Error('AI 生成超时');
+        }
         const result = await getGeneratePictureDescriptionResult(currentTaskId);
         if (usePictureUploadStore.getState().aiTaskId !== currentTaskId) {
           stopAiPolling();
@@ -119,7 +156,7 @@ const PictureUploadPage: React.FC = () => {
 
         pollingTimerRef.current = window.setTimeout(() => {
           void poll();
-        }, 1000);
+        }, intervalMs);
       } catch (error: unknown) {
         const message = error instanceof Error && error.message ? error.message : 'AI 生成失败';
         setUploadDraft({
@@ -134,14 +171,137 @@ const PictureUploadPage: React.FC = () => {
     void poll();
   }, [addToast, setUploadDraft, stopAiPolling]);
 
+  const handleNotificationMessage = useCallback((message: string) => {
+    const text = typeof message === 'string' ? message : String(message);
+    if (!text) return;
+    addToast(text, 'info', 5000, 'top-right');
+  }, [addToast]);
+
+  const startAiWsOrPoll = useCallback(async (currentTaskId: string) => {
+    if (wsListeningTaskIdRef.current === currentTaskId) return;
+    wsListeningTaskIdRef.current = currentTaskId;
+    stopAiPolling();
+    stopAiWebSocket();
+
+    const userId = useAuthStore.getState().userInfo?.id;
+    if (!userId) {
+      void pollAiResult(currentTaskId, { intervalMs: 1000, timeoutMs: 30_000 });
+      return;
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${protocol}://${window.location.host}/api/ws/picture/review/${encodeURIComponent(String(userId))}`;
+
+    let hasOpened = false;
+    let hasFallback = false;
+
+    const fallbackToPolling = () => {
+      if (hasFallback) return;
+      hasFallback = true;
+      stopAiWebSocket();
+      void pollAiResult(currentTaskId, { intervalMs: 1000, timeoutMs: 30_000 });
+    };
+
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(wsUrl);
+    } catch {
+      fallbackToPolling();
+      return;
+    }
+
+    wsRef.current = socket;
+
+    wsConnectTimerRef.current = window.setTimeout(() => {
+      if (!hasOpened) {
+        try {
+          socket.close();
+        } catch {
+        }
+        fallbackToPolling();
+      }
+    }, 3000);
+
+    socket.onopen = () => {
+      hasOpened = true;
+      if (wsConnectTimerRef.current !== null) {
+        window.clearTimeout(wsConnectTimerRef.current);
+        wsConnectTimerRef.current = null;
+      }
+      wsPingTimerRef.current = window.setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send('PING');
+        }
+      }, 30_000);
+    };
+
+    socket.onmessage = (event: MessageEvent) => {
+      const raw = typeof event.data === 'string' ? event.data : String(event.data);
+      if (!raw) return;
+
+      let parsed: any;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        handleNotificationMessage(raw);
+        return;
+      }
+
+      if (!parsed || parsed.type !== 'ai_description') {
+        handleNotificationMessage(raw);
+        return;
+      }
+
+      if (parsed.taskId !== currentTaskId) return;
+      if (usePictureUploadStore.getState().aiTaskId !== currentTaskId) return;
+
+      if (parsed.status === 'success') {
+        setUploadDraft({
+          singleIntro: typeof parsed.description === 'string' ? parsed.description : '',
+          isGenerating: false,
+          aiTaskId: null,
+        });
+        stopAiPolling();
+        stopAiWebSocket();
+        addToast('AI 简介生成成功！', 'success');
+        return;
+      }
+
+      if (parsed.status === 'failed') {
+        const errorMessage = typeof parsed.errorMessage === 'string' && parsed.errorMessage ? parsed.errorMessage : 'AI生成失败';
+        setUploadDraft({
+          isGenerating: false,
+          aiTaskId: null,
+        });
+        stopAiPolling();
+        stopAiWebSocket();
+        addToast(errorMessage, 'error');
+      }
+    };
+
+    socket.onerror = () => {
+      if (!hasOpened) {
+        fallbackToPolling();
+      }
+    };
+
+    socket.onclose = () => {
+      if (!hasOpened) return;
+      if (usePictureUploadStore.getState().aiTaskId === currentTaskId && usePictureUploadStore.getState().isGenerating) {
+        fallbackToPolling();
+      }
+    };
+  }, [addToast, handleNotificationMessage, pollAiResult, setUploadDraft, stopAiPolling, stopAiWebSocket]);
+
   useEffect(() => {
     if (!isGenerating || !aiTaskId) return;
-    void pollAiResult(aiTaskId);
-  }, [aiTaskId, isGenerating, pollAiResult]);
+    void startAiWsOrPoll(aiTaskId);
+  }, [aiTaskId, isGenerating, startAiWsOrPoll]);
 
   useEffect(() => () => {
     stopAiPolling();
-  }, [stopAiPolling]);
+    stopAiWebSocket();
+  }, [stopAiPolling, stopAiWebSocket]);
 
 
   // Handlers
@@ -347,12 +507,13 @@ const PictureUploadPage: React.FC = () => {
   const handleAiGenerate = async () => {
     if (!singleFile) return;
     stopAiPolling();
+    stopAiWebSocket();
     setUploadDraft({
       isGenerating: true,
       aiTaskId: null,
     });
     try {
-      const taskId = await generatePictureDescription(singleFile);
+      const task = await generatePictureDescription(singleFile);
       if (usePictureUploadStore.getState().singleFile !== singleFile) {
         setUploadDraft({
           isGenerating: false,
@@ -363,9 +524,8 @@ const PictureUploadPage: React.FC = () => {
       addToast('AI 任务已提交，生成中...', 'info');
       setUploadDraft({
         isGenerating: true,
-        aiTaskId: taskId,
+        aiTaskId: task.taskId,
       });
-      void pollAiResult(taskId);
     } catch (error: unknown) {
       const message = error instanceof Error && error.message ? error.message : 'AI 生成任务提交失败';
       addToast(message, 'error');

@@ -57,6 +57,7 @@ const MENU_ITEMS = [
 const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchInput, setSearchInput] = useState('');
   const isCollapsed = useLayoutStore((state) => state.isSidebarCollapsed);
   const toggleSidebar = useLayoutStore((state) => state.toggleSidebar);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -101,6 +102,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onChangeView]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    setSearchInput(searchParams.get('search') || '');
+  }, [location.search]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      if (searchInput.trim()) {
+        navigate(`/dashboard/gallery?search=${encodeURIComponent(searchInput.trim())}`);
+      } else {
+        navigate(`/dashboard/gallery`);
+      }
+    }
+  };
 
   const handleLogout = async () => {
     await postLogout();
@@ -238,7 +254,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
             </div>
             <input
               type="text"
-              placeholder="搜索图片"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="搜索图片 (按回车键搜索)"
               className="block w-full pl-10 pr-4 py-2 bg-[var(--input-bg)] border border-[var(--border-color)] rounded-full text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 focus:bg-[var(--bg-sidebar)] transition-all duration-200 shadow-sm"
             />
           </div>

@@ -1,11 +1,17 @@
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 // https://vitejs.dev/config/
 const config = {
   base: './',
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   test: {
     pool: 'vmThreads',
     poolOptions: {
@@ -18,6 +24,12 @@ const config = {
   server: {
     proxy: {
       '/api': {
+        target: 'http://127.0.0.1:8123',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
+      '/ws': {
         target: 'http://127.0.0.1:8123',
         changeOrigin: true,
         secure: false,
