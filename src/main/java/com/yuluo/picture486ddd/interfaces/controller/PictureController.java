@@ -212,8 +212,12 @@ public class PictureController {
         Long spaceId = pictureQueryRequest.getSpaceId();
         //公开图库
         if(spaceId == null){
-            //普通用户只能查看已过审的数据
-            pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            // 判断是否查询的是当前用户自己的图片（"我的发布"）
+            User loginUser = userApplicationService.getLoginUser(request);
+            // 只有当不是查询自己的图片时，才限制只查看已过审的数据
+            if (loginUser == null || !loginUser.getId().equals(pictureQueryRequest.getUserId())) {
+                pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            }
             pictureQueryRequest.setNullSpaceId(true);
         }else {
             boolean hasPermission = StpKit.SPACE.hasPermission(SpaceUserPermissionConstant.PICTURE_VIEW);
