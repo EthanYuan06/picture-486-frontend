@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  Bot,
   Image as ImageIcon,
   UploadCloud,
   BookHeart,
@@ -37,6 +38,7 @@ import AlbumDetailAdminPage from './AlbumManage/AlbumDetailAdminPage';
 import UserManagePage from './UserManage/UserManagePage';
 import SpaceAnalyzePage from './SpaceAnalyze/SpaceAnalyzePage';
 import HomePage from './HomePage';
+import AssistantPage from './Assistant/AssistantPage';
 
 interface DashboardProps {
   onChangeView: (view: ViewState) => void;
@@ -45,6 +47,7 @@ interface DashboardProps {
 // Menu definitions
 const MENU_ITEMS = [
   { id: 'gallery', label: '图片库', icon: <ImageIcon size={20} />, adminOnly: false },
+  { id: 'assistant', label: 'AI助手', icon: <Bot size={20} />, adminOnly: false },
   { id: 'upload', label: '图片上传', icon: <UploadCloud size={20} />, adminOnly: false },
   { id: 'my-public', label: '我的发布', icon: <Share2 size={20} />, adminOnly: false },
   { id: 'albums', label: '我的相册', icon: <BookHeart size={20} />, adminOnly: false },
@@ -164,6 +167,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
     document.title = navTitle;
   }, [navTitle]);
 
+  const isAssistantTab = activeTab === 'assistant';
+
   if (loading) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-[var(--bg-main)]">
@@ -262,10 +267,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
       <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-main)]">
 
         {/* Top Header */}
-        <header className="h-16 flex items-center justify-between px-8 border-b border-[var(--border-color)] bg-[var(--bg-header)]/80 backdrop-blur-md sticky top-0 z-[100]">
+        <header className="h-16 flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 border-b border-[var(--border-color)] bg-[var(--bg-header)]/80 backdrop-blur-md sticky top-0 z-[100]">
 
           {/* Search Bar - Start */}
-          <div className="relative w-64 md:w-96 hidden sm:block group">
+          <div className="relative w-56 md:w-80 lg:w-96 hidden sm:block group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-primary transition-colors duration-200">
               <Search size={18} />
             </div>
@@ -280,8 +285,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
           </div>
           {/* Search Bar - End */}
 
+          <div className="hidden flex-1 justify-center lg:flex">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/assistant')}
+              className={`group relative inline-flex h-10 items-center gap-2 rounded-[16px] border px-5 transition-all duration-200 ${
+                activeTab === 'assistant'
+                  ? 'border-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_18px_38px_rgba(107,70,193,0.26)]'
+                  : 'border-white/18 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_14px_30px_rgba(107,70,193,0.18)]'
+              } bg-[radial-gradient(circle_at_20%_20%,_rgba(214,188,250,0.28),_transparent_50%),radial-gradient(circle_at_80%_60%,_rgba(99,179,237,0.18),_transparent_56%),linear-gradient(90deg,_rgba(159,122,234,0.32),_rgba(99,179,237,0.22))] hover:-translate-y-[1px] hover:border-white/28 hover:bg-[radial-gradient(circle_at_25%_22%,_rgba(214,188,250,0.38),_transparent_48%),radial-gradient(circle_at_78%_58%,_rgba(99,179,237,0.26),_transparent_52%),linear-gradient(90deg,_rgba(159,122,234,0.42),_rgba(99,179,237,0.3))] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_22px_44px_rgba(107,70,193,0.32)] active:translate-y-0 active:scale-[0.985] active:shadow-[inset_0_2px_10px_rgba(0,0,0,0.18),0_14px_34px_rgba(107,70,193,0.22)]`}
+              aria-label="打开 云图库智能助手"
+            >
+              <span className="pointer-events-none absolute inset-0 rounded-[16px] opacity-0 blur-[18px] transition-opacity duration-200 group-hover:opacity-100 motion-reduce:transition-none bg-[radial-gradient(circle_at_30%_25%,_rgba(214,188,250,0.28),_transparent_58%),radial-gradient(circle_at_75%_60%,_rgba(99,179,237,0.22),_transparent_62%)]" />
+              <span className="relative inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_30%,_rgba(214,188,250,0.52),_rgba(159,122,234,0.3)_55%,_rgba(99,179,237,0.22)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_10px_18px_rgba(107,70,193,0.18)]">
+                <Bot size={16} className="text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.35)]" />
+              </span>
+              <span className="relative text-sm font-semibold leading-none text-white drop-shadow-[0_1px_10px_rgba(15,23,42,0.38)]">
+                云图库智能助手
+              </span>
+            </button>
+          </div>
+
           {/* Right Side: User Profile & Theme Toggle */}
           <div className="flex items-center gap-4">
+
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/assistant')}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition-colors duration-200 lg:hidden ${
+                activeTab === 'assistant'
+                  ? 'border-transparent bg-gradient-to-r from-[#6B46C1] to-[#9F7AEA] text-white shadow-[0_12px_24px_rgba(107,70,193,0.28)]'
+                  : 'border-[var(--border-color)] bg-[var(--bg-hover)] text-[var(--text-primary)] hover:bg-white/10'
+              }`}
+              aria-label="打开 AI 智能助手"
+            >
+              <Bot size={18} />
+            </button>
 
             {/* Message Center */}
             <MessageCenter />
@@ -343,7 +382,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-6 relative scrollbar-hide">
+        <main
+          className={`relative flex-1 min-h-0 scrollbar-hide ${
+            isAssistantTab ? 'overflow-hidden p-3 sm:p-4 lg:p-5' : 'overflow-auto p-6'
+          }`}
+        >
           <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none -z-10" />
 
           <div className="max-w-7xl mx-auto h-full relative z-0">
@@ -354,6 +397,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
               </div>
             ) : activeTab === 'gallery' ? (
               <HomePage />
+            ) : activeTab === 'assistant' ? (
+              <AssistantPage />
             ) : activeTab === 'img-mgmt' ? (
               <PictureManagePage />
             ) : activeTab === 'my-public' ? (

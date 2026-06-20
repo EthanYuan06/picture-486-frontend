@@ -39,8 +39,6 @@ export const API_ROUTES = {
   PICTURE_UPLOAD_BATCH: `/api/picture/upload/batch`,
   PICTURE_EDIT: `/api/picture/edit`,
   PICTURE_EDIT_BATCH: `/api/picture/edit/batch`,
-  PICTURE_AI_GENERATE_DESCRIPTION: `/api/picture/ai_generate_description`,
-  PICTURE_AI_GENERATE_DESCRIPTION_RESULT: `/api/picture/ai_generate_description/result`,
 
   // Space
   SPACE_ADD: `/api/space/add`,

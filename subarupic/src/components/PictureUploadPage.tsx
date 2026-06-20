@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { UploadCloud, X, Plus, CheckCircle, AlertCircle, Loader2, FileImage, RefreshCw, Sparkles } from 'lucide-react';
-import { uploadPicture, uploadPictureBatch, getPictureTagCategory, editPicture, generatePictureDescription, getGeneratePictureDescriptionResult } from '../services/picture';
-import { Picture } from '../types/picture';
+import { UploadCloud, X, Plus, CheckCircle, Loader2, FileImage, RefreshCw } from 'lucide-react';
+import { uploadPicture, uploadPictureBatch, getPictureTagCategory, editPicture } from '../services/picture';
 import ImageZoomPreview from './ImageZoomPreview';
 import PortalSelect from './PortalSelect';
 import { useToastStore } from '../stores/toastStore';
 import { usePictureUploadStore } from '../stores/pictureUpload';
-import { useAuthStore } from '../stores/auth';
 
 // Types
 type UploadMode = 'initial' | 'single' | 'batch';
@@ -28,12 +26,6 @@ const PictureUploadPage: React.FC = () => {
   const [mode, setMode] = useState<UploadMode>('initial');
   const [zoomOpen, setZoomOpen] = useState(false);
   const addToast = useToastStore((state) => state.addToast);
-  const pollingTimerRef = useRef<number | null>(null);
-  const pollingTaskIdRef = useRef<string | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const wsPingTimerRef = useRef<number | null>(null);
-  const wsConnectTimerRef = useRef<number | null>(null);
-  const wsListeningTaskIdRef = useRef<string | null>(null);
 
   // Single Upload State
   const singleFile = usePictureUploadStore((state) => state.singleFile);
@@ -43,36 +35,9 @@ const PictureUploadPage: React.FC = () => {
   const singleCategory = usePictureUploadStore((state) => state.singleCategory);
   const singleTags = usePictureUploadStore((state) => state.singleTags);
   const tagInput = usePictureUploadStore((state) => state.tagInput);
-  const isGenerating = usePictureUploadStore((state) => state.isGenerating);
-  const aiTaskId = usePictureUploadStore((state) => state.aiTaskId);
   const setUploadDraft = usePictureUploadStore((state) => state.setDraft);
   const resetUploadDraft = usePictureUploadStore((state) => state.resetDraft);
   const [isSingleUploading, setIsSingleUploading] = useState(false);
-
-  const stopAiWebSocket = useCallback(() => {
-    if (wsConnectTimerRef.current !== null) {
-      window.clearTimeout(wsConnectTimerRef.current);
-      wsConnectTimerRef.current = null;
-    }
-    if (wsPingTimerRef.current !== null) {
-      window.clearInterval(wsPingTimerRef.current);
-      wsPingTimerRef.current = null;
-    }
-    if (wsRef.current) {
-      try {
-        wsRef.current.onopen = null;
-        wsRef.current.onmessage = null;
-        wsRef.current.onerror = null;
-        wsRef.current.onclose = null;
-        if (wsRef.current.readyState === WebSocket.CONNECTING || wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.close();
-        }
-      } catch {
-      } finally {
-        wsRef.current = null;
-      }
-    }
-  }, []);
 
   // Batch Upload State
   const [batchQueue, setBatchQueue] = useState<BatchFileItem[]>([]);
@@ -81,7 +46,6 @@ const PictureUploadPage: React.FC = () => {
   // Common State
   const [dragActive, setDragActive] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
-  const [tagOptions, setTagOptions] = useState<string[]>([]); // Optional: for suggestions
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch Categories
@@ -89,7 +53,6 @@ const PictureUploadPage: React.FC = () => {
     getPictureTagCategory().then(res => {
       if (res) {
         setCategoryOptions(res.categoryList);
-        setTagOptions(res.tagList);
       }
     });
   }, []);
@@ -100,208 +63,12 @@ const PictureUploadPage: React.FC = () => {
     if (currentMode !== 'single') setZoomOpen(false);
   }, [currentMode]);
 
-  const stopAiPolling = useCallback(() => {
-    if (pollingTimerRef.current !== null) {
-      window.clearTimeout(pollingTimerRef.current);
-      pollingTimerRef.current = null;
-    }
-    pollingTaskIdRef.current = null;
-  }, []);
-
   const resetSingleUploadDraft = useCallback(() => {
-    stopAiPolling();
-    stopAiWebSocket();
     if (singlePreview.startsWith('blob:')) {
       URL.revokeObjectURL(singlePreview);
     }
     resetUploadDraft();
-  }, [resetUploadDraft, singlePreview, stopAiPolling, stopAiWebSocket]);
-
-  const pollAiResult = useCallback(async (currentTaskId: string, options?: { intervalMs?: number; timeoutMs?: number }) => {
-    if (pollingTaskIdRef.current === currentTaskId) return;
-
-    pollingTaskIdRef.current = currentTaskId;
-    const intervalMs = typeof options?.intervalMs === 'number' ? options.intervalMs : 1000;
-    const timeoutMs = typeof options?.timeoutMs === 'number' ? options.timeoutMs : 30_000;
-    const startAt = Date.now();
-
-    const poll = async () => {
-      try {
-        if (Date.now() - startAt >= timeoutMs) {
-          throw new Error('AI 生成超时');
-        }
-        const result = await getGeneratePictureDescriptionResult(currentTaskId);
-        if (usePictureUploadStore.getState().aiTaskId !== currentTaskId) {
-          stopAiPolling();
-          return;
-        }
-        if (!result) {
-          throw new Error('获取AI生成结果失败');
-        }
-
-        if (result.status === 'success') {
-          setUploadDraft({
-            singleIntro: result.description || result.result || '',
-            isGenerating: false,
-            aiTaskId: null,
-          });
-          stopAiPolling();
-          addToast('AI 简介生成成功！', 'success');
-          return;
-        }
-
-        if (result.status === 'failed') {
-          throw new Error(result.errorMessage || result.result || 'AI生成失败');
-        }
-
-        pollingTimerRef.current = window.setTimeout(() => {
-          void poll();
-        }, intervalMs);
-      } catch (error: unknown) {
-        const message = error instanceof Error && error.message ? error.message : 'AI 生成失败';
-        setUploadDraft({
-          isGenerating: false,
-          aiTaskId: null,
-        });
-        stopAiPolling();
-        addToast(message, 'error');
-      }
-    };
-
-    void poll();
-  }, [addToast, setUploadDraft, stopAiPolling]);
-
-  const handleNotificationMessage = useCallback((message: string) => {
-    const text = typeof message === 'string' ? message : String(message);
-    if (!text) return;
-    addToast(text, 'info', 5000, 'top-right');
-  }, [addToast]);
-
-  const startAiWsOrPoll = useCallback(async (currentTaskId: string) => {
-    if (wsListeningTaskIdRef.current === currentTaskId) return;
-    wsListeningTaskIdRef.current = currentTaskId;
-    stopAiPolling();
-    stopAiWebSocket();
-
-    const userId = useAuthStore.getState().userInfo?.id;
-    if (!userId) {
-      void pollAiResult(currentTaskId, { intervalMs: 1000, timeoutMs: 30_000 });
-      return;
-    }
-
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const wsUrl = `${protocol}://${window.location.host}/api/ws/picture/review/${encodeURIComponent(String(userId))}`;
-
-    let hasOpened = false;
-    let hasFallback = false;
-
-    const fallbackToPolling = () => {
-      if (hasFallback) return;
-      hasFallback = true;
-      stopAiWebSocket();
-      void pollAiResult(currentTaskId, { intervalMs: 1000, timeoutMs: 30_000 });
-    };
-
-    let socket: WebSocket;
-    try {
-      socket = new WebSocket(wsUrl);
-    } catch {
-      fallbackToPolling();
-      return;
-    }
-
-    wsRef.current = socket;
-
-    wsConnectTimerRef.current = window.setTimeout(() => {
-      if (!hasOpened) {
-        try {
-          socket.close();
-        } catch {
-        }
-        fallbackToPolling();
-      }
-    }, 3000);
-
-    socket.onopen = () => {
-      hasOpened = true;
-      if (wsConnectTimerRef.current !== null) {
-        window.clearTimeout(wsConnectTimerRef.current);
-        wsConnectTimerRef.current = null;
-      }
-      wsPingTimerRef.current = window.setInterval(() => {
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send('PING');
-        }
-      }, 30_000);
-    };
-
-    socket.onmessage = (event: MessageEvent) => {
-      const raw = typeof event.data === 'string' ? event.data : String(event.data);
-      if (!raw) return;
-
-      let parsed: any;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        handleNotificationMessage(raw);
-        return;
-      }
-
-      if (!parsed || parsed.type !== 'ai_description') {
-        handleNotificationMessage(raw);
-        return;
-      }
-
-      if (parsed.taskId !== currentTaskId) return;
-      if (usePictureUploadStore.getState().aiTaskId !== currentTaskId) return;
-
-      if (parsed.status === 'success') {
-        setUploadDraft({
-          singleIntro: typeof parsed.description === 'string' ? parsed.description : '',
-          isGenerating: false,
-          aiTaskId: null,
-        });
-        stopAiPolling();
-        stopAiWebSocket();
-        addToast('AI 简介生成成功！', 'success');
-        return;
-      }
-
-      if (parsed.status === 'failed') {
-        const errorMessage = typeof parsed.errorMessage === 'string' && parsed.errorMessage ? parsed.errorMessage : 'AI生成失败';
-        setUploadDraft({
-          isGenerating: false,
-          aiTaskId: null,
-        });
-        stopAiPolling();
-        stopAiWebSocket();
-        addToast(errorMessage, 'error');
-      }
-    };
-
-    socket.onerror = () => {
-      if (!hasOpened) {
-        fallbackToPolling();
-      }
-    };
-
-    socket.onclose = () => {
-      if (!hasOpened) return;
-      if (usePictureUploadStore.getState().aiTaskId === currentTaskId && usePictureUploadStore.getState().isGenerating) {
-        fallbackToPolling();
-      }
-    };
-  }, [addToast, handleNotificationMessage, pollAiResult, setUploadDraft, stopAiPolling, stopAiWebSocket]);
-
-  useEffect(() => {
-    if (!isGenerating || !aiTaskId) return;
-    void startAiWsOrPoll(aiTaskId);
-  }, [aiTaskId, isGenerating, startAiWsOrPoll]);
-
-  useEffect(() => () => {
-    stopAiPolling();
-    stopAiWebSocket();
-  }, [stopAiPolling, stopAiWebSocket]);
+  }, [resetUploadDraft, singlePreview]);
 
 
   // Handlers
@@ -393,8 +160,6 @@ const PictureUploadPage: React.FC = () => {
           singleCategory: '',
           singleTags: [],
           tagInput: '',
-          isGenerating: false,
-          aiTaskId: null,
         });
         setMode('single');
       } catch (error) {
@@ -415,8 +180,6 @@ const PictureUploadPage: React.FC = () => {
           singleCategory: '',
           singleTags: [],
           tagInput: '',
-          isGenerating: false,
-          aiTaskId: null,
         });
         setMode('single');
       }
@@ -501,38 +264,6 @@ const PictureUploadPage: React.FC = () => {
       addToast(message, 'error');
     } finally {
       setIsSingleUploading(false);
-    }
-  };
-
-  const handleAiGenerate = async () => {
-    if (!singleFile) return;
-    stopAiPolling();
-    stopAiWebSocket();
-    setUploadDraft({
-      isGenerating: true,
-      aiTaskId: null,
-    });
-    try {
-      const task = await generatePictureDescription(singleFile);
-      if (usePictureUploadStore.getState().singleFile !== singleFile) {
-        setUploadDraft({
-          isGenerating: false,
-          aiTaskId: null,
-        });
-        return;
-      }
-      addToast('AI 任务已提交，生成中...', 'info');
-      setUploadDraft({
-        isGenerating: true,
-        aiTaskId: task.taskId,
-      });
-    } catch (error: unknown) {
-      const message = error instanceof Error && error.message ? error.message : 'AI 生成任务提交失败';
-      addToast(message, 'error');
-      setUploadDraft({
-        isGenerating: false,
-        aiTaskId: null,
-      });
     }
   };
 
@@ -710,18 +441,7 @@ const PictureUploadPage: React.FC = () => {
 
           {/* Introduction */}
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-[var(--text-secondary)]">图片简介 (Markdown)</label>
-              <button
-                onClick={handleAiGenerate}
-                disabled={isGenerating || !singleFile}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gradient-to-r from-[#6a35ff] to-[#9b5cff] text-white rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-purple-900/20"
-                title="根据图片内容自动生成简介"
-              >
-                {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                {isGenerating ? '生成中...' : 'AI 智能生成'}
-              </button>
-            </div>
+            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">图片简介 (Markdown)</label>
             <textarea
               value={singleIntro}
               onChange={(e) => setUploadDraft({ singleIntro: e.target.value })}

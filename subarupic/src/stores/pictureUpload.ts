@@ -8,8 +8,6 @@ interface PictureUploadDraftState {
   singleCategory: string;
   singleTags: string[];
   tagInput: string;
-  isGenerating: boolean;
-  aiTaskId: string | null;
 }
 
 interface PictureUploadStore extends PictureUploadDraftState {
@@ -26,8 +24,6 @@ function createDefaultDraftState(): PictureUploadDraftState {
     singleCategory: '',
     singleTags: [],
     tagInput: '',
-    isGenerating: false,
-    aiTaskId: null,
   };
 }
 
