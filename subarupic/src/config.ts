@@ -9,6 +9,7 @@
 
 // 基础路径置空，直接使用相对路径
 export const API_BASE_URL = '';
+export const AI_API_BASE_URL = 'http://127.0.0.1:8024';
 
 // 集中管理所有 API 端点
 export const API_ROUTES = {
@@ -72,4 +73,13 @@ export const API_ROUTES = {
   MESSAGE_UNREAD_COUNT: `/api/message/unread/count`,
   MESSAGE_READ: `/api/message/read`,
   MESSAGE_READ_ALL: `/api/message/read/all`,
+
+  // AI Assistant
+  AI_CREATE_THREAD: `/api/create-thread`,
+  AI_CHECK_THREAD: `/api/check-thread`,
+  AI_DELETE_THREAD: `/api/delete-thread`,
+  AI_COS_PRESIGN: `/api/cos/presign`,
+  CHAT: `/api/chat`,
+  CHAT_STREAM: `/api/chat/stream`,
+  CHAT_STREAM_RESUME: `/api/chat/stream`,
 };

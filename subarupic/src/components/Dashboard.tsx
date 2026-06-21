@@ -27,7 +27,6 @@ import MessageCenter from './Message/MessageCenter';
 import PendingDev from './PendingDev';
 import PictureManagePage from './PictureManage/PictureManagePage';
 import MyPublicPicturesPage from './MyPublicPictures/MyPublicPicturesPage';
-import PictureUploadPage from './PictureUploadPage';
 import ProfilePage from './ProfilePage';
 import AlbumDetailPage from './Albums/AlbumDetailPage';
 import AlbumProfilePage from './Albums/AlbumProfilePage';
@@ -39,6 +38,9 @@ import UserManagePage from './UserManage/UserManagePage';
 import SpaceAnalyzePage from './SpaceAnalyze/SpaceAnalyzePage';
 import HomePage from './HomePage';
 import AssistantPage from './Assistant/AssistantPage';
+import HitlUploadPage from './HitlUpload/HitlUploadPage';
+import HitlUploadConfirmPage from './HitlUpload/HitlUploadConfirmPage';
+import HitlUploadResultPage from './HitlUpload/HitlUploadResultPage';
 
 interface DashboardProps {
   onChangeView: (view: ViewState) => void;
@@ -149,6 +151,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
     }
     if (tabId === 'albums') {
       return '我的相册';
+    }
+    if (tabId === 'upload-confirm') {
+      return '确认上传';
+    }
+    if (tabId === 'upload-result') {
+      return '上传结果';
     }
     const item = MENU_ITEMS.find(m => m.id === tabId);
     return item ? item.label : '';
@@ -294,14 +302,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
                   ? 'border-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_18px_38px_rgba(107,70,193,0.26)]'
                   : 'border-white/18 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_14px_30px_rgba(107,70,193,0.18)]'
               } bg-[radial-gradient(circle_at_20%_20%,_rgba(214,188,250,0.28),_transparent_50%),radial-gradient(circle_at_80%_60%,_rgba(99,179,237,0.18),_transparent_56%),linear-gradient(90deg,_rgba(159,122,234,0.32),_rgba(99,179,237,0.22))] hover:-translate-y-[1px] hover:border-white/28 hover:bg-[radial-gradient(circle_at_25%_22%,_rgba(214,188,250,0.38),_transparent_48%),radial-gradient(circle_at_78%_58%,_rgba(99,179,237,0.26),_transparent_52%),linear-gradient(90deg,_rgba(159,122,234,0.42),_rgba(99,179,237,0.3))] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_22px_44px_rgba(107,70,193,0.32)] active:translate-y-0 active:scale-[0.985] active:shadow-[inset_0_2px_10px_rgba(0,0,0,0.18),0_14px_34px_rgba(107,70,193,0.22)]`}
-              aria-label="打开 云图库智能助手"
+              aria-label="打开 昴云 - 智能助手"
             >
               <span className="pointer-events-none absolute inset-0 rounded-[16px] opacity-0 blur-[18px] transition-opacity duration-200 group-hover:opacity-100 motion-reduce:transition-none bg-[radial-gradient(circle_at_30%_25%,_rgba(214,188,250,0.28),_transparent_58%),radial-gradient(circle_at_75%_60%,_rgba(99,179,237,0.22),_transparent_62%)]" />
               <span className="relative inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-white/20 bg-[radial-gradient(circle_at_30%_30%,_rgba(214,188,250,0.52),_rgba(159,122,234,0.3)_55%,_rgba(99,179,237,0.22)_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_10px_18px_rgba(107,70,193,0.18)]">
                 <Bot size={16} className="text-white drop-shadow-[0_1px_2px_rgba(15,23,42,0.35)]" />
               </span>
               <span className="relative text-sm font-semibold leading-none text-white drop-shadow-[0_1px_10px_rgba(15,23,42,0.38)]">
-                云图库智能助手
+                昴云 - 智能助手
               </span>
             </button>
           </div>
@@ -408,7 +416,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onChangeView }) => {
             ) : activeTab === 'album-mgmt' ? (
               <AlbumManagePage />
             ) : activeTab === 'upload' ? (
-              <PictureUploadPage />
+              <HitlUploadPage />
+            ) : activeTab === 'upload-confirm' ? (
+              <HitlUploadConfirmPage />
+            ) : activeTab === 'upload-result' ? (
+              <HitlUploadResultPage />
             ) : activeTab === 'profile' ? (
               <ProfilePage />
             ) : activeTab === 'albums' ? (
