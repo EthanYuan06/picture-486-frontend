@@ -239,29 +239,37 @@ const HitlUploadConfirmPage: React.FC = () => {
 
   return (
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6">
-      <section className="rounded-3xl border border-white/15 bg-white/10 p-6 shadow-[0_24px_60px_rgba(11,15,25,0.24)] backdrop-blur-xl sm:p-8">
+      <section className="rounded-3xl border border-black/10 bg-white/80 p-6 shadow-[0_24px_60px_rgba(11,15,25,0.16)] backdrop-blur-xl dark:border-white/15 dark:bg-white/10 dark:shadow-[0_24px_60px_rgba(11,15,25,0.24)] sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-white/40">
+            <p className="text-sm uppercase tracking-[0.24em] text-slate-500 dark:text-white/40">
               Human In The Loop
             </p>
-            <h2 className="mt-2 text-3xl font-semibold text-white">确认 AI 分析结果</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70">
+            <h2 className="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">
+              确认 AI 分析结果
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-white/70">
               审阅 AI 生成的名称、简介、分类和标签。所有修改都会自动保存到本地，确认后才会真正完成上传。
             </p>
           </div>
 
-          <div className="min-w-[260px] rounded-2xl border border-white/10 bg-black/10 p-4">
-            <div className="flex items-center justify-between text-sm text-white/75">
+          <div className="min-w-[260px] rounded-2xl border border-black/10 bg-slate-900/5 p-4 dark:border-white/10 dark:bg-black/10">
+            <div className="flex items-center justify-between text-sm text-slate-700 dark:text-white/75">
               <span className="inline-flex items-center gap-2">
                 <Clock3 size={16} />
                 请在 60 秒内确认
               </span>
-              <span className={remainingSeconds > 10 ? 'text-white' : 'text-amber-300'}>
+              <span
+                className={
+                  remainingSeconds > 10
+                    ? 'text-slate-900 dark:text-white'
+                    : 'text-amber-700 dark:text-amber-300'
+                }
+              >
                 {remainingSeconds}s
               </span>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
               <div
                 className={`h-full transition-all ${
                   remainingSeconds > 10 ? 'bg-primary' : 'bg-amber-400'
@@ -273,7 +281,7 @@ const HitlUploadConfirmPage: React.FC = () => {
         </div>
 
         {remainingSeconds === 0 ? (
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-300/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-300/50 bg-amber-100/70 px-4 py-3 text-sm text-amber-900 dark:border-amber-300/30 dark:bg-amber-400/10 dark:text-amber-100">
             <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
             <span>
               当前会话可能已超时。你仍可尝试提交，若后端返回超时提示，页面会自动带你回到上传页重新开始。
@@ -283,21 +291,23 @@ const HitlUploadConfirmPage: React.FC = () => {
       </section>
 
       <div className="grid flex-1 gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur-xl sm:p-6">
+        <section className="rounded-3xl border border-black/10 bg-white/80 p-5 backdrop-blur-xl dark:border-white/15 dark:bg-white/10 sm:p-6">
           <div className="flex h-full flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">图片预览</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                图片预览
+              </h3>
               {hasModified ? (
-                <span className="rounded-full border border-primary/40 bg-primary/20 px-3 py-1 text-xs text-white">
+                <span className="rounded-full border border-primary/40 bg-primary/15 px-3 py-1 text-xs text-slate-900 dark:bg-primary/20 dark:text-white">
                   已修改
                 </span>
               ) : (
-                <span className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-xs text-emerald-100">
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-200/60 px-3 py-1 text-xs text-emerald-900 dark:border-emerald-400/30 dark:bg-emerald-500/15 dark:text-emerald-100">
                   保持原建议
                 </span>
               )}
             </div>
-            <div className="flex flex-1 items-center justify-center rounded-[28px] border border-white/10 bg-black/10 p-4 min-h-[320px]">
+            <div className="flex min-h-[320px] flex-1 items-center justify-center rounded-[28px] border border-black/10 bg-slate-900/5 p-4 dark:border-white/10 dark:bg-black/10">
               {imageUrl ? (
                 <img
                   src={imageUrl}
@@ -305,24 +315,28 @@ const HitlUploadConfirmPage: React.FC = () => {
                   className="max-h-[520px] w-full rounded-2xl object-contain"
                 />
               ) : (
-                <div className="text-sm text-white/45">暂无图片可预览</div>
+                <div className="text-sm text-slate-500 dark:text-white/45">
+                  暂无图片可预览
+                </div>
               )}
             </div>
           </div>
         </section>
 
-        <section className="rounded-3xl border border-white/15 bg-white/10 p-6 backdrop-blur-xl sm:p-7">
+        <section className="rounded-3xl border border-black/10 bg-white/80 p-6 backdrop-blur-xl dark:border-white/15 dark:bg-white/10 sm:p-7">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-semibold text-white">AI 分析结果</h3>
-              <p className="mt-2 text-sm text-white/60">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                AI 分析结果
+              </h3>
+              <p className="mt-2 text-sm text-slate-600 dark:text-white/60">
                 支持直接编辑，并可随时恢复到 AI 原始建议。
               </p>
             </div>
             <button
               type="button"
               onClick={handleRestore}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-black/10 px-4 py-2.5 text-sm font-medium text-white/80 transition hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-black/5 dark:border-white/10 dark:bg-black/10 dark:text-white/80 dark:hover:bg-white/10"
             >
               <RotateCcw size={16} />
               恢复原建议
@@ -331,7 +345,7 @@ const HitlUploadConfirmPage: React.FC = () => {
 
           <div className="mt-6 space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/75">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-white/75">
                 名称
               </label>
               <input
@@ -339,14 +353,16 @@ const HitlUploadConfirmPage: React.FC = () => {
                 value={form.name}
                 onChange={(event) => updateForm({ name: event.target.value })}
                 maxLength={50}
-                className="w-full rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-primary"
+                className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary dark:border-white/10 dark:bg-black/10 dark:text-white dark:placeholder:text-white/30"
                 placeholder="请输入图片名称"
               />
-              <p className="mt-2 text-xs text-white/40">{form.name.length}/50</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-white/40">
+                {form.name.length}/50
+              </p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/75">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-white/75">
                 简介
               </label>
               <textarea
@@ -356,36 +372,36 @@ const HitlUploadConfirmPage: React.FC = () => {
                 }
                 rows={6}
                 maxLength={500}
-                className="w-full rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-primary"
+                className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary dark:border-white/10 dark:bg-black/10 dark:text-white dark:placeholder:text-white/30"
                 placeholder="请输入 50-500 字简介"
               />
-              <p className="mt-2 text-xs text-white/40">
+              <p className="mt-2 text-xs text-slate-500 dark:text-white/40">
                 {form.introduction.length}/500
               </p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/75">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-white/75">
                 分类
               </label>
               <input
                 type="text"
                 value={form.category}
                 onChange={(event) => updateForm({ category: event.target.value })}
-                className="w-full rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-primary"
+                className="w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary dark:border-white/10 dark:bg-black/10 dark:text-white dark:placeholder:text-white/30"
                 placeholder="请输入分类"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-white/75">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-white/75">
                 标签
               </label>
-              <div className="flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-black/10 px-3 py-3">
+              <div className="flex flex-wrap gap-2 rounded-2xl border border-black/10 bg-white/70 px-3 py-3 dark:border-white/10 dark:bg-black/10">
                 {form.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/20 px-3 py-1 text-sm text-white"
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-3 py-1 text-sm text-slate-900 dark:bg-primary/20 dark:text-white"
                   >
                     <Tag size={12} />
                     {tag}
@@ -396,7 +412,7 @@ const HitlUploadConfirmPage: React.FC = () => {
                           tags: form.tags.filter((item) => item !== tag),
                         })
                       }
-                      className="text-white/70 transition hover:text-white"
+                      className="text-slate-600 transition hover:text-slate-900 dark:text-white/70 dark:hover:text-white"
                     >
                       <X size={12} />
                     </button>
@@ -412,18 +428,18 @@ const HitlUploadConfirmPage: React.FC = () => {
                       handleAddTag();
                     }
                   }}
-                  className="min-w-[180px] flex-1 bg-transparent px-2 py-1 text-sm text-white outline-none placeholder:text-white/30"
+                  className="min-w-[180px] flex-1 bg-transparent px-2 py-1 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white dark:placeholder:text-white/30"
                   placeholder="输入标签后回车"
                 />
               </div>
-              <div className="mt-2 flex items-center justify-between text-xs text-white/40">
+              <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-white/40">
                 <span>标签数量需在 3-10 个之间</span>
                 <span>{form.tags.length}/10</span>
               </div>
             </div>
 
             <div>
-              <label className="mb-3 block text-sm font-medium text-white/75">
+              <label className="mb-3 block text-sm font-medium text-slate-700 dark:text-white/75">
                 上传位置
               </label>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -432,12 +448,14 @@ const HitlUploadConfirmPage: React.FC = () => {
                   onClick={() => updateForm({ space_id: null })}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     !isPrivateSpace
-                      ? 'border-primary bg-primary/20 text-white'
-                      : 'border-white/10 bg-black/10 text-white/70 hover:bg-white/10'
+                      ? 'border-primary bg-primary/15 text-slate-900 dark:bg-primary/20 dark:text-white'
+                      : 'border-black/10 bg-white/70 text-slate-700 hover:bg-black/5 dark:border-white/10 dark:bg-black/10 dark:text-white/70 dark:hover:bg-white/10'
                   }`}
                 >
                   <div className="text-sm font-medium">公共图库</div>
-                  <div className="mt-1 text-xs text-white/45">发送 `space_id: null`</div>
+                  <div className="mt-1 text-xs text-slate-500 dark:text-white/45">
+                    发送 `space_id: null`
+                  </div>
                 </button>
                 <button
                   type="button"
@@ -449,12 +467,12 @@ const HitlUploadConfirmPage: React.FC = () => {
                   }}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     isPrivateSpace
-                      ? 'border-primary bg-primary/20 text-white'
-                      : 'border-white/10 bg-black/10 text-white/70 hover:bg-white/10'
+                      ? 'border-primary bg-primary/15 text-slate-900 dark:bg-primary/20 dark:text-white'
+                      : 'border-black/10 bg-white/70 text-slate-700 hover:bg-black/5 dark:border-white/10 dark:bg-black/10 dark:text-white/70 dark:hover:bg-white/10'
                   }`}
                 >
                   <div className="text-sm font-medium">个人相册</div>
-                  <div className="mt-1 text-xs text-white/45">
+                  <div className="mt-1 text-xs text-slate-500 dark:text-white/45">
                     选择具体相册后上传
                   </div>
                 </button>
@@ -468,16 +486,16 @@ const HitlUploadConfirmPage: React.FC = () => {
                       space_id: event.target.value ? Number(event.target.value) : null,
                     })
                   }
-                  className="mt-3 w-full rounded-2xl border border-white/10 bg-black/10 px-4 py-3 text-sm text-white outline-none transition focus:border-primary"
+                  className="mt-3 w-full rounded-2xl border border-black/10 bg-white/90 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-primary dark:border-white/10 dark:bg-black/10 dark:text-white"
                 >
-                  <option value="" className="bg-[#1b1332]">
+                  <option value="" className="bg-white text-slate-900 dark:bg-[#1b1332] dark:text-white">
                     {isLoadingSpaces ? '相册加载中...' : '请选择个人相册'}
                   </option>
                   {spaceOptions.map((space) => (
                     <option
                       key={space.id}
                       value={space.id}
-                      className="bg-[#1b1332]"
+                      className="bg-white text-slate-900 dark:bg-[#1b1332] dark:text-white"
                     >
                       {space.spaceName}
                     </option>
@@ -492,7 +510,7 @@ const HitlUploadConfirmPage: React.FC = () => {
               type="button"
               onClick={handleCancel}
               disabled={isSubmitting}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/10 px-5 py-3.5 text-sm font-medium text-white/80 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white/70 px-5 py-3.5 text-sm font-medium text-slate-700 transition hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-black/10 dark:text-white/80 dark:hover:bg-white/10"
             >
               取消上传
             </button>
