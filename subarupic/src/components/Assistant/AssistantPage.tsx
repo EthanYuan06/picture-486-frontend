@@ -115,6 +115,77 @@ const extractAssistantImages = (data: Record<string, unknown>): AssistantAttachm
   }, []);
 };
 
+const IMAGE_URL_PATTERN = /\.(png|jpe?g|gif|webp|bmp|svg|avif)(?:$|[?#])/i;
+
+const normalizeClipboardUrl = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  if (/^data:image\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol === 'http:' || url.protocol === 'https:') {
+      return url.toString();
+    }
+  } catch {
+    return '';
+  }
+
+  return '';
+};
+
+const extractImageUrlFromHtml = (html: string): string => {
+  if (!html.trim()) {
+    return '';
+  }
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const image = doc.querySelector('img');
+  const src = image?.getAttribute('src') ?? '';
+  return normalizeClipboardUrl(src);
+};
+
+const extractImageUrlFromText = (value: string): string => {
+  const normalized = value
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line && !line.startsWith('#'));
+
+  if (!normalized) {
+    return '';
+  }
+
+  const url = normalizeClipboardUrl(normalized);
+  if (!url) {
+    return '';
+  }
+
+  return /^data:image\//i.test(url) || IMAGE_URL_PATTERN.test(url) ? url : '';
+};
+
+const inferImageName = (url: string): string => {
+  if (/^data:image\//i.test(url)) {
+    return 'online-image';
+  }
+
+  try {
+    const pathname = new URL(url).pathname;
+    const lastSegment = pathname.split('/').filter(Boolean).pop();
+    if (!lastSegment) {
+      return 'online-image';
+    }
+    const decoded = decodeURIComponent(lastSegment);
+    return decoded || 'online-image';
+  } catch {
+    return 'online-image';
+  }
+};
+
 const buildWelcomeMessage = (): AssistantMessage => ({
   id: createId(),
   role: 'assistant',
@@ -274,6 +345,7 @@ const AssistantPage: React.FC = () => {
   const [activeSessionId, setActiveSessionId] = useState('');
   const [draft, setDraft] = useState('');
   const [draftImageFile, setDraftImageFile] = useState<File | null>(null);
+  const [draftImageUrl, setDraftImageUrl] = useState('');
   const [draftImagePreview, setDraftImagePreview] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
@@ -344,8 +416,35 @@ const AssistantPage: React.FC = () => {
       URL.revokeObjectURL(draftImagePreview);
     }
     setDraftImageFile(null);
+    setDraftImageUrl('');
     setDraftImagePreview('');
   }, [draftImagePreview]);
+
+  const applyDraftImageFile = useCallback(
+    (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        addToast('仅支持上传图片文件', 'error');
+        return;
+      }
+      clearDraftImage();
+      setDraftImageFile(file);
+      setDraftImagePreview(URL.createObjectURL(file));
+    },
+    [addToast, clearDraftImage]
+  );
+
+  const applyDraftImageUrl = useCallback(
+    (url: string) => {
+      const normalizedUrl = normalizeClipboardUrl(url);
+      if (!normalizedUrl) {
+        return;
+      }
+      clearDraftImage();
+      setDraftImageUrl(normalizedUrl);
+      setDraftImagePreview(normalizedUrl);
+    },
+    [clearDraftImage]
+  );
 
   const createSessionTitle = useCallback((value: string): string => {
     const plainText = extractPlainText(value);
@@ -687,16 +786,41 @@ const AssistantPage: React.FC = () => {
       if (!file) {
         return;
       }
-      if (!file.type.startsWith('image/')) {
-        addToast('仅支持上传图片文件', 'error');
-        return;
-      }
-      clearDraftImage();
-      setDraftImageFile(file);
-      setDraftImagePreview(URL.createObjectURL(file));
+      applyDraftImageFile(file);
       event.target.value = '';
     },
-    [addToast, clearDraftImage]
+    [applyDraftImageFile]
+  );
+
+  const handleComposerPaste = useCallback(
+    (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const clipboardItems = Array.from(event.clipboardData.items);
+      const imageItem = clipboardItems.find(
+        (item) => item.kind === 'file' && item.type.startsWith('image/')
+      );
+      const imageFile = imageItem?.getAsFile() ?? null;
+      if (imageFile) {
+        event.preventDefault();
+        applyDraftImageFile(imageFile);
+        return;
+      }
+
+      const htmlImageUrl = extractImageUrlFromHtml(event.clipboardData.getData('text/html'));
+      if (htmlImageUrl) {
+        event.preventDefault();
+        applyDraftImageUrl(htmlImageUrl);
+        return;
+      }
+
+      const plainImageUrl =
+        extractImageUrlFromText(event.clipboardData.getData('text/uri-list')) ||
+        extractImageUrlFromText(event.clipboardData.getData('text/plain'));
+      if (plainImageUrl) {
+        event.preventDefault();
+        applyDraftImageUrl(plainImageUrl);
+      }
+    },
+    [applyDraftImageFile, applyDraftImageUrl]
   );
 
   const handleSend = useCallback(async () => {
@@ -710,7 +834,7 @@ const AssistantPage: React.FC = () => {
     }
 
     const trimmedDraft = draft.trim();
-    if (!trimmedDraft && !draftImageFile) {
+    if (!trimmedDraft && !draftImageFile && !draftImageUrl) {
       return;
     }
 
@@ -724,6 +848,7 @@ const AssistantPage: React.FC = () => {
       let imageUrl = '';
       let userAttachments: AssistantAttachment[] = [];
       let assistantMessageId = '';
+      const hasDraftImage = !!(draftImageFile || draftImageUrl);
 
       if (draftImageFile) {
         const uploaded = await uploadAssistantImageToCos(draftImageFile);
@@ -735,10 +860,18 @@ const AssistantPage: React.FC = () => {
             url: uploaded.imageUrl,
           },
         ];
+      } else if (draftImageUrl) {
+        imageUrl = draftImageUrl;
+        userAttachments = [
+          {
+            id: createId(),
+            name: inferImageName(draftImageUrl),
+            url: draftImageUrl,
+          },
+        ];
       }
 
-      const messageText =
-        trimmedDraft || (draftImageFile ? '请帮我分析这张图片' : '');
+      const messageText = trimmedDraft || (hasDraftImage ? '请帮我分析这张图片' : '');
       const userId = String(userInfo.id);
       const requestSpaceId = null;
       const now = Date.now();
@@ -754,7 +887,7 @@ const AssistantPage: React.FC = () => {
         usableSession.title === '新会话'
           ? createSessionTitle(messageText)
           : usableSession.title;
-      const nextPreview = createSessionPreview(messageText, !!draftImageFile);
+      const nextPreview = createSessionPreview(messageText, hasDraftImage);
       const assistantCreatedAt = Date.now();
       assistantMessageId = createId();
       const assistantPlaceholder: AssistantMessage = {
@@ -934,6 +1067,7 @@ const AssistantPage: React.FC = () => {
     createSessionTitle,
     draft,
     draftImageFile,
+    draftImageUrl,
     isSending,
     navigate,
     setPendingSession,
@@ -941,6 +1075,16 @@ const AssistantPage: React.FC = () => {
     updateSession,
     userInfo?.id,
   ]);
+
+  const draftImageName = useMemo(() => {
+    if (draftImageFile) {
+      return draftImageFile.name;
+    }
+    if (draftImageUrl) {
+      return inferImageName(draftImageUrl);
+    }
+    return '待上传图片';
+  }, [draftImageFile, draftImageUrl]);
 
   const handleComposerKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1281,7 +1425,7 @@ const AssistantPage: React.FC = () => {
                             >
                               <img
                                 src={draftImagePreview}
-                                alt={draftImageFile?.name || '待上传图片'}
+                                alt={draftImageName}
                                 className="h-full w-full object-cover object-center"
                               />
                               <button
@@ -1301,6 +1445,7 @@ const AssistantPage: React.FC = () => {
                           ref={textareaRef}
                           value={draft}
                           onChange={(event) => setDraft(event.target.value)}
+                          onPaste={handleComposerPaste}
                           onKeyDown={handleComposerKeyDown}
                           rows={1}
                           placeholder="输入你的问题，或上传一张图片后让 AI 分析。按 Enter 发送，Shift + Enter 换行。"
@@ -1330,7 +1475,7 @@ const AssistantPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => void handleSend()}
-                          disabled={isSending || (!draft.trim() && !draftImageFile)}
+                          disabled={isSending || (!draft.trim() && !draftImageFile && !draftImageUrl)}
                           className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#6217d7,#7c3aed)] text-white shadow-[0_20px_45px_rgba(98,23,215,0.34)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                           aria-label="发送消息"
                         >
