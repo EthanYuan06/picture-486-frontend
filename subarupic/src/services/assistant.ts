@@ -1,4 +1,4 @@
-import { AI_API_BASE_URL, API_ROUTES } from '../config';
+import { API_ROUTES } from '../config';
 import { useAuthStore } from '../stores/auth';
 import type {
   AssistantApiEnvelope,
@@ -12,10 +12,6 @@ import type {
   AssistantStreamHandlers,
   AssistantThreadData,
 } from '../types/assistant';
-
-function buildAiUrl(path: string): string {
-  return `${AI_API_BASE_URL}${path}`;
-}
 
 function getAiHeaders(
   includeJsonContentType = true,
@@ -364,7 +360,7 @@ async function consumeAssistantStream(
 
 export async function createAssistantThread(): Promise<string> {
   const response = await fetch(
-    buildAiUrl(API_ROUTES.AI_CREATE_THREAD),
+    API_ROUTES.AI_CREATE_THREAD,
     createAiRequestInit('GET')
   );
   const data = await parseAiResponse<AssistantThreadData>(response);
@@ -377,7 +373,7 @@ export async function createAssistantThread(): Promise<string> {
 
 export async function checkAssistantThread(threadId: string): Promise<boolean> {
   const response = await fetch(
-    buildAiUrl(`${API_ROUTES.AI_CHECK_THREAD}/${encodeURIComponent(threadId)}`),
+    `${API_ROUTES.AI_CHECK_THREAD}/${encodeURIComponent(threadId)}`,
     createAiRequestInit('GET')
   );
   const data = await parseAiResponse<AssistantCheckThreadData | boolean>(response);
@@ -403,7 +399,7 @@ export async function checkAssistantThread(threadId: string): Promise<boolean> {
 
 export async function deleteAssistantThread(threadId: string): Promise<boolean> {
   const response = await fetch(
-    buildAiUrl(`${API_ROUTES.AI_DELETE_THREAD}/${encodeURIComponent(threadId)}`),
+    `${API_ROUTES.AI_DELETE_THREAD}/${encodeURIComponent(threadId)}`,
     createAiRequestInit('DELETE')
   );
 
@@ -418,9 +414,7 @@ export async function getAssistantCosPresign(
   filename: string
 ): Promise<AssistantCosPresignData> {
   const response = await fetch(
-    buildAiUrl(
-      `${API_ROUTES.AI_COS_PRESIGN}?filename=${encodeURIComponent(filename)}`
-    ),
+    `${API_ROUTES.AI_COS_PRESIGN}?filename=${encodeURIComponent(filename)}`,
     createAiRequestInit('GET')
   );
   const data = await parseAiResponse<AssistantCosPresignData>(response);
@@ -457,7 +451,7 @@ export async function sendAssistantChatMessage(
   payload: AssistantChatRequest
 ): Promise<AssistantChatData> {
   const response = await fetch(
-    buildAiUrl(API_ROUTES.CHAT),
+    API_ROUTES.CHAT,
     createAiRequestInit('POST', payload)
   );
 
@@ -469,7 +463,7 @@ export async function streamAssistantChatMessage(
   handlers: AssistantStreamHandlers = {},
   signal?: AbortSignal
 ): Promise<AssistantChatData | null> {
-  const response = await fetch(buildAiUrl(API_ROUTES.CHAT_STREAM), {
+  const response = await fetch(API_ROUTES.CHAT_STREAM, {
     ...createAiRequestInit('POST', payload, true),
     signal,
   });
@@ -482,7 +476,7 @@ export async function resumeAssistantChatStream(
   handlers: AssistantStreamHandlers = {},
   signal?: AbortSignal
 ): Promise<AssistantChatData | null> {
-  const response = await fetch(buildAiUrl(API_ROUTES.CHAT_STREAM_RESUME), {
+  const response = await fetch(API_ROUTES.CHAT_STREAM_RESUME, {
     ...createAiRequestInit('POST', payload, true),
     signal,
   });

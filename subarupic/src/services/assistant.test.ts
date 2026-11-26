@@ -130,7 +130,7 @@ describe('assistant stream parser', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/chat/stream'),
+      expect.stringContaining('/ai/api/chat/stream'),
       expect.objectContaining({
         credentials: 'include',
         headers: expect.objectContaining({
@@ -176,7 +176,7 @@ describe('assistant stream parser', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/api/chat/stream'),
+      expect.stringContaining('/ai/api/chat/stream'),
       expect.objectContaining({
         body: JSON.stringify({
           thread_id: 'thread-3',
